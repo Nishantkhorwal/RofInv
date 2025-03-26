@@ -5,7 +5,7 @@ import { RiArrowRightSLine } from "react-icons/ri";
 import { RiArrowLeftSLine } from "react-icons/ri";
 
 // Initialize the WebSocket connection
-const socket = io("https://inventorybackend-bf15.onrender.com"); // Replace with your backend URL
+const socket = io(`${import.meta.env.VITE_API_BASE_URL}`); // Replace with your backend URL
 
 
 
@@ -31,6 +31,7 @@ const ProjectList = () => {
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   useEffect(() => {
   const token = localStorage.getItem("token"); 
   const loggedInUserName = localStorage.getItem("userName"); 
@@ -40,7 +41,7 @@ const ProjectList = () => {
     return;
   }
 
-  fetch("https://inventorybackend-bf15.onrender.com/api/user/all", {
+  fetch(`${API_BASE_URL}/api/user/all`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -81,7 +82,7 @@ const ProjectList = () => {
         try {
           const token = localStorage.getItem('token');
           console.log(token);
-          const response = await fetch('https://inventorybackend-bf15.onrender.com/api/project/inventories', {
+          const response = await fetch(`${API_BASE_URL}/api/project/inventories`, {
             headers: {
               Authorization: `Bearer ${token}`,
             },
@@ -181,7 +182,7 @@ const handleSubmitForm = async (e) => {
     formDataToSend.append('chequeImage', formData.chequeImage);
   
     try {
-      const response = await fetch(`https://inventorybackend-bf15.onrender.com/api/project/hold/${selectedItem._id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/project/hold/${selectedItem._id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -235,7 +236,7 @@ const handleSubmitForm = async (e) => {
   
           console.log("Fetching sale requests...");
   
-          const response = await fetch('https://inventorybackend-bf15.onrender.com/api/project/request', {
+          const response = await fetch(`${API_BASE_URL}/api/project/request`, {
             method: 'GET',
             headers: {
               'Authorization': `Bearer ${token}`,

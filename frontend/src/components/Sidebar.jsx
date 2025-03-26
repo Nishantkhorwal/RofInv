@@ -25,7 +25,7 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, T
 
 
 // Initialize the WebSocket connection
-const socket = io("https://inventorybackend-bf15.onrender.com");
+const socket = io(`${import.meta.env.VITE_API_BASE_URL}`);
 
 const Sidebar = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -37,6 +37,7 @@ const Sidebar = () => {
   const [selectedCategory, setSelectedCategory] = useState('Pending'); // Track selected category
   const [hasPendingRequests, setHasPendingRequests] = useState(false);
   const [dropdownVisible, setDropdownVisible] = useState(false);
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   const toggleDropdown = () => {
     setDropdownVisible(!dropdownVisible);
@@ -108,7 +109,7 @@ const Sidebar = () => {
           }
   
           // Make the API request with the Authorization header
-          const response = await fetch('https://inventorybackend-bf15.onrender.com/api/project/inventories', {
+          const response = await fetch(`${API_BASE_URL}/api/project/inventories`, {
             method: 'GET',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -145,7 +146,7 @@ const Sidebar = () => {
           }
   
           // Make the API request with the Authorization header
-          const response = await fetch('https://inventorybackend-bf15.onrender.com/api/project/request', {
+          const response = await fetch(`${API_BASE_URL}/api/project/request`, {
             method: 'GET',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -197,7 +198,7 @@ const Sidebar = () => {
 
     const handleAction = async (requestId, action) => {
       try {
-        const response = await fetch(`https://inventorybackend-bf15.onrender.com/api/project/requests/${requestId}`, {
+        const response = await fetch(`${API_BASE_URL}/api/project/requests/${requestId}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -296,7 +297,7 @@ const Sidebar = () => {
                     )}
                     <td className="px-3 py-4">
                       <a
-                        href={`https://inventorybackend-bf15.onrender.com/${request.inventoryId.chequeImagePath}`}
+                        href={`${API_BASE_URL}/${request.inventoryId.chequeImagePath}`}
                         download
                         target="_blank"
                         rel="noopener noreferrer"
@@ -306,7 +307,7 @@ const Sidebar = () => {
                         </button>
                       </a>
                       <a
-                        href={`https://inventorybackend-bf15.onrender.com/${request.inventoryId.panCardImagePath}`}
+                        href={`${API_BASE_URL}/${request.inventoryId.panCardImagePath}`}
                         download
                         target="_blank"
                         rel="noopener noreferrer"
@@ -416,7 +417,7 @@ const Sidebar = () => {
     });
   
     try {
-      const response = await fetch(`https://inventorybackend-bf15.onrender.com/api/project/inventory/${inventoryId}/update-status`, {
+      const response = await fetch(`${API_BASE_URL}/api/project/inventory/${inventoryId}/update-status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus }),
@@ -967,7 +968,7 @@ const Sidebar = () => {
         }
     
         try {
-          const response = await fetch('https://inventorybackend-bf15.onrender.com/api/user/get', {
+          const response = await fetch(`${API_BASE_URL}/api/user/get`, {
             method: 'GET',
             headers: {
               Authorization: `Bearer ${token}`,
@@ -1035,7 +1036,7 @@ const Sidebar = () => {
       setProfileSuccess('');
     
       try {
-        const response = await fetch('https://inventorybackend-bf15.onrender.com/api/user/update', {
+        const response = await fetch(`${API_BASE_URL}/api/user/update`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -1156,7 +1157,7 @@ const Sidebar = () => {
       return; // Optionally, redirect to login
     }
   
-    fetch("https://inventorybackend-bf15.onrender.com/api/user/all", {
+    fetch(`${API_BASE_URL}/api/user/all`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -1248,7 +1249,7 @@ const toggleAssignedProject = (user, projectId) => {
   
       console.log("Payload Sent to API:", updatedUser); // Check if visibleFields and assignedProjects are correct
   
-      const res = await fetch(`https://inventorybackend-bf15.onrender.com/api/user/update/${userId}`, {
+      const res = await fetch(`${API_BASE_URL}/api/user/update/${userId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -1298,7 +1299,7 @@ const toggleAssignedProject = (user, projectId) => {
     }
   
     try {
-      const response = await fetch(`https://inventorybackend-bf15.onrender.com/api/user/delete/${userId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/user/delete/${userId}`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${token}`, // Include token in the request
@@ -1358,7 +1359,7 @@ const toggleAssignedProject = (user, projectId) => {
               formData.append('file', file);
   
               try {
-                const response = await fetch('https://inventorybackend-bf15.onrender.com/api/project/create', {
+                const response = await fetch(`${API_BASE_URL}/api/project/create`, {
                   method: 'POST',
                   body: formData,
                 });
@@ -1455,7 +1456,7 @@ const toggleAssignedProject = (user, projectId) => {
                   };
 
                   try {
-                    const response = await fetch('https://inventorybackend-bf15.onrender.com/api/user/register', {
+                    const response = await fetch(`${API_BASE_URL}/api/user/register`, {
                       method: 'POST',
                       headers: {
                         'Content-Type': 'application/json',

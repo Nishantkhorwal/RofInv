@@ -7,13 +7,14 @@ const LoginPage = () => {
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false); // Track password visibility
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
       const response = await fetch(
-        "https://inventorybackend-bf15.onrender.com/api/user/login",
+        `${API_BASE_URL}/api/user/login`,
         {
           method: "POST",
           headers: {

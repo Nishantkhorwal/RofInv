@@ -10,7 +10,6 @@ backend/.env
 # Ignore build and log files
 frontend/dist/
 frontend/dist-ssr/
-backend/uploads/
 
 # Logs
 frontend/logs/

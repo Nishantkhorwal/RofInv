@@ -10,11 +10,12 @@ const InventoryPage = () => {
         panCardImage: null,
         chequeImage: null
     });
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
     // Function to fetch inventory for the selected project
     const fetchInventory = async () => {
         try {
-            const response = await fetch(`https://inventorybackend-bf15.onrender.com/api/project/${projectName}/inventory`);
+            const response = await fetch(`${API_BASE_URL}/api/project/${projectName}/inventory`);
             const data = await response.json();
             setInventory(data.inventory);  // Set the inventory data in state
         } catch (error) {
@@ -56,7 +57,7 @@ const InventoryPage = () => {
         formDataToSend.append('chequeImage', formData.chequeImage);
 
         try {
-            const response = await fetch(`https://inventorybackend-bf15.onrender.com/api/project/hold/${selectedItem._id}`, {
+            const response = await fetch(`${API_BASE_URL}api/project/hold/${selectedItem._id}`, {
                 method: 'POST',
                 body: formDataToSend
             });
