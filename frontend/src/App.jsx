@@ -8,7 +8,7 @@ import Sidebar from "./components/Sidebar";
 import PrivateRoute from "./components/PrivateRoute"; // Import PrivateRoute
 import MainPage from "./components/MainPage";
 import LinkPage from "./pages/LinkPage";
-import Sukoon from "./pages/sukoon";
+import Sukoon from "./pages/Sukoon";
 
 function App() {
   return (
