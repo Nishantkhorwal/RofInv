@@ -1,0 +1,17 @@
+
+/* Optional but provides smooth sliding */
+@keyframes slide-focus {
+    from {
+      transform: scale(0.9);
+      opacity: 0.7;
+    }
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+  
+  .animate-slide-focus {
+    animation: slide-focus 0.3s ease-in-out forwards;
+  }
+  
