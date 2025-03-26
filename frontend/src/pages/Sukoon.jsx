@@ -248,7 +248,7 @@ function Sukoon() {
     <>
     <div>
         <Navbar2/>
-        <div className='px-28 pt-20 pb-10' id='about'>
+        <div className='px-4 lg:px-28 pt-20 pb-10' id='about'>
         <h1 className='text-6xl font-semibold mb-6 americana'>
          Sukoon
         </h1> 
@@ -269,7 +269,7 @@ function Sukoon() {
             <Slider {...settings2} ref={(slider) => (sliderRef2 = slider)}>
               {images2.map((img, index) => (
                 <div key={index} className="flex justify-center">
-                  <img src={img} className="w-full h-[500px] object-cover rounded-lg" alt={`Slide ${index}`} />
+                  <img src={img} className="sm:h-[200px] lg:w-full lg:h-[500px] object-cover rounded-lg" alt={`Slide ${index}`} />
                 </div>
               ))}
             </Slider>
@@ -288,46 +288,46 @@ function Sukoon() {
               ❯
             </button>
           </div>
-          <div className="flex justify-center mt-4 space-x-3">
+          <div className="flex justify-center mt-4 space-x-1 lg:space-x-3">
         {images2.map((img, index) => (
           <img
             key={index}
             src={img}
-            className={`w-28 h-[70px] object-cover  rounded-[25px] cursor-pointer  ${currentSlide === index ? 'opacity-100' : 'opacity-30'}`}
+            className={`w-14 h-[30px] lg:w-28 lg:h-[70px]  object-cover  rounded-[25px] cursor-pointer  ${currentSlide === index ? 'opacity-100' : 'opacity-30'}`}
             onClick={() => sliderRef2.slickGoTo(index)}
             alt={`Thumbnail ${index}`}
           />
         ))}
       </div>
         </div>
-        <div className='px-28 py-20 bg-[#f7f3e8]' id='location'>
-            <p className='americana text-5xl font-semibold mb-16'>
+        <div className='lg:px-28 px-4 py-20 bg-[#f7f3e8]' id='location'>
+            <p className='americana text-2xl lg:text-5xl font-semibold mb-16'>
                 Location Advantages
             </p>
             <div className='flex flex-row flex-wrap gap-y-14'>
-                <div className='flex flex-row w-[33%] justify-start items-center'>
-                    <img src='images/road.png' className='me-4 w-16'></img>
+                <div className='flex flex-row justify-start w-full lg:w-[33%] items-center'>
+                    <img src='images2/road.png' className='me-4 w-16'></img>
                     <p className='poppins text-xs'>Minutes away from <br/>dwarka expressway</p>
                 </div>
-                <div className='flex flex-row w-[33%] justify-start items-center'>
-                    <img src='images/hospital.png' className='me-4 w-16'></img>
+                <div className='flex flex-row justify-start w-full lg:w-[33%] items-center'>
+                    <img src='images2/hospital.png' className='me-4 w-16'></img>
                     <p className='poppins text-xs'> More than 5 world class <br/> hospital within minutes </p>
                 </div>
                 
-                <div className='flex flex-row w-[33%] justify-start items-center'>
-                    <img src='images/uni.png' className='me-4 w-16'></img>
+                <div className='flex flex-row justify-start w-full lg:w-[33%] items-center'>
+                    <img src='images2/uni.png' className='me-4 w-16'></img>
                     <p className='poppins text-xs'> Faster access to IMT Manesar, <br/>Hero Honda Chowk, NH8 & <br/>Multi-utility corridor </p>
                 </div>
-                <div className='flex flex-row w-[33%] justify-start items-center'>
-                    <img src='images/rail.png' className='me-4 w-16'></img>
+                <div className='flex flex-row justify-start w-full lg:w-[33%] items-center'>
+                    <img src='images2/rail.png' className='me-4 w-16'></img>
                     <p className='poppins text-xs'>Transportation & Medical <br/> facilities are nearby</p>
                 </div>
-                <div className='flex flex-row w-[33%] justify-start items-center'>
-                    <img src='images/uni.png' className='me-4 w-16'></img>
+                <div className='flex flex-row justify-start w-full lg:w-[33%] items-center'>
+                    <img src='images2/uni.png' className='me-4 w-16'></img>
                     <p className='poppins text-xs'>Present in already inhabited <br/>area with established school<br/>& Market</p>
                 </div>
-                <div className='flex flex-row w-[33%] justify-start items-center'>
-                    <img src='images/bus.png' className='me-4 w-16'></img>
+                <div className='flex flex-row justify-start w-full lg:w-[33%] items-center'>
+                    <img src='images2/bus.png' className='me-4 w-16'></img>
                     <p className='poppins text-xs'>1800 MNC's are<br/> close by</p>
                 </div>
                 
@@ -336,14 +336,14 @@ function Sukoon() {
              
         </div>
     </div>
-    <div className='px-28 py-20 ' id='amenities'>
+    <div className='lg:px-28 px-4 py-20 ' id='amenities'>
             <p className='americana text-5xl font-semibold mb-16'>
                 Amenities
             </p>
             <div className='flex flex-row flex-wrap gap-y-10'>
                 {
                     ame.map((ame)=> (
-                        <div className='flex flex-row w-[33.3333%] justify-start items-center'>
+                        <div className='flex flex-row w-[48%] lg:w-[33.3333%] justify-start items-center'>
                             <img src={ame.img} className='me-4 w-8'></img>
                             <p className='poppins '>{ame.text}</p>
                         </div>
@@ -364,7 +364,7 @@ function Sukoon() {
       <div key={index} className="relative flex justify-center">
         <img
           src={item.img}
-          className="w-full h-[500px] object-cover rounded-lg"
+          className="w-full sm:h-[200px] lg:h-[500px] object-cover rounded-lg"
           alt={`Slide ${index}`}
         />
         <div className={`absolute left-0 bottom-10 ${ item.text ? 'bg-gradient-to-r from-amber-800 to-transparent' : 'bg-transparent'  } py-2 px-4 `}>
@@ -394,15 +394,15 @@ function Sukoon() {
       
     </div>
     
-    <div className='px-28 py-20' id='sitemap'>
-        <p className='americana text-5xl font-semibold mb-16'>
+    <div className='lg:px-28 px-4 py-20' id='sitemap'>
+        <p className='americana text-2xl lg:text-5xl font-semibold mb-16'>
             Site Plan
         </p>
         <img src = "images2/SitePlan4.jpg" className='hover:scale-105 transition-all transform duration-300'></img>
 
     </div> 
-    <div className='px-28 py-20' id='locationmap'>
-        <p className='americana text-5xl font-semibold mb-16'>
+    <div className='lg:px-28 px-4 py-20' id='locationmap'>
+        <p className='americana text-2xl lg:text-5xl font-semibold mb-16'>
             Location Map
         </p>
         <img src = "images2/locationMap2.jpg" className='hover:scale-105 transition-all transform duration-300'></img>

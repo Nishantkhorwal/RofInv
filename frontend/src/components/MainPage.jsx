@@ -152,7 +152,7 @@ function MainPage() {
     <>
     <div>
         <Navbar/>
-        <div className='pb-10 pt-20 px-28' id='about'>
+        <div className='pb-10 pt-20 px-4 lg:px-28' id='about'>
         <h1 className='text-6xl americana font-semibold mb-6'>
          Pravasa
         </h1> 
@@ -169,7 +169,7 @@ function MainPage() {
         <Slider {...settings} ref={(slider) => (sliderRef = slider)}>
           {images.map((img, index) => (
             <div key={index} className="flex justify-center">
-              <img src={img} className="h-[500px] rounded-lg w-full object-cover" alt={`Slide ${index}`} />
+              <img src={img} className="sm:h-[200px] lg:h-[500px] rounded-lg w-full object-cover" alt={`Slide ${index}`} />
             </div>
           ))}
         </Slider>
@@ -190,12 +190,12 @@ function MainPage() {
       </div>
 
       {/* Thumbnail Navigation */}
-      <div className="flex justify-center mt-4 space-x-3">
+      <div className="flex justify-center mt-4 space-x-1 lg:space-x-3">
         {images.map((img, index) => (
           <img
             key={index}
             src={img}
-            className={`w-28 h-[70px] object-cover  rounded-[25px] cursor-pointer border-2 ${currentSlide === index ? 'opacity-100' : 'opacity-30'}`}
+            className={`w-14 h-[30px] lg:w-28 lg:h-[70px] object-cover  rounded-[25px] cursor-pointer border-2 ${currentSlide === index ? 'opacity-100' : 'opacity-30'}`}
             onClick={() => sliderRef.slickGoTo(index)}
             alt={`Thumbnail ${index}`}
           />
@@ -203,32 +203,32 @@ function MainPage() {
       </div>
     </div>
         <div className='bg-[#f7f3e8] px-28 py-20' id='location'>
-            <p className='text-5xl americana font-bold mb-16'>
+            <p className='lg:text-5xl americana font-bold mb-16'>
                 Location Advantages
             </p>
             <div className='flex flex-row flex-wrap gap-y-14'>
-                <div className='flex flex-row justify-start w-[33%] items-center'>
-                    <img src='images/road.png' className='w-16 me-4'></img>
+                <div className='flex flex-row justify-start lg:w-[33%] items-center'>
+                    <img src='images2/road.png' className='w-16 me-4'></img>
                     <p className='text-xs poppins'>2 mins from <br/>dwarka expressway</p>
                 </div>
-                <div className='flex flex-row justify-start w-[33%] items-center'>
-                    <img src='images/airport.png' className='w-16 me-4'></img>
+                <div className='flex flex-row justify-start lg:w-[33%] items-center'>
+                    <img src='images2/airport.png' className='w-16 me-4'></img>
                     <p className='text-xs poppins'> 25 mins from IGI <br/>Airport</p>
                 </div>
-                <div className='flex flex-row justify-start w-[33%] items-center'>
-                    <img src='images/hospital.png' className='w-16 me-4'></img>
+                <div className='flex flex-row justify-start lg:w-[33%] items-center'>
+                    <img src='images2/hospital.png' className='w-16 me-4'></img>
                     <p className='text-xs poppins'> 20 Mins from Medanta,<br/>The Medacity & Rajiv<br/>Chowk</p>
                 </div>
-                <div className='flex flex-row justify-start w-[33%] items-center'>
-                    <img src='images/hospital.png' className='w-16 me-4'></img>
+                <div className='flex flex-row justify-start lg:w-[33%] items-center'>
+                    <img src='images2/hospital.png' className='w-16 me-4'></img>
                     <p className='text-xs poppins'>7 mins from Manesar, <br/> Toll Plaza, NH-8, <br/> Hyatt Regency Hotel </p>
                 </div>
-                <div className='flex flex-row justify-start w-[33%] items-center'>
-                    <img src='images/plot.png' className='w-16 me-4'></img>
+                <div className='flex flex-row justify-start lg:w-[33%] items-center'>
+                    <img src='images2/plot.png' className='w-16 me-4'></img>
                     <p className='text-xs poppins'>Centrally located<br/>corner plot</p>
                 </div>
-                <div className='flex flex-row justify-start w-[33%] items-center'>
-                    <img src='images/uni.png' className='w-16 me-4'></img>
+                <div className='flex flex-row justify-start lg:w-[33%] items-center'>
+                    <img src='images2/uni.png' className='w-16 me-4'></img>
                     <p className='text-xs poppins'>10 mins from proposed <br/> Diplomatic Enclaves <br/> & Embassies</p>
                 </div>
 
@@ -236,14 +236,14 @@ function MainPage() {
              
         </div>
     </div>
-    <div className='px-28 py-20' id='amenities'>
-            <p className='text-5xl americana font-bold mb-16'>
+    <div className='px-10 lg:px-28 py-20' id='amenities'>
+            <p className='text-2xl lg:text-5xl americana font-bold mb-16'>
                 Amenities
             </p>
-            <div className='flex flex-row flex-wrap gap-y-10'>
+            <div className='flex flex-row flex-wrap gap-y-5 lg:gap-y-10'>
                 {
                     ame.map((ame)=> (
-                        <div className='flex flex-row justify-start w-[33.3333%] items-center'>
+                        <div className='flex flex-row justify-start w-full lg:w-[33.3333%] items-center'>
                             <img src={ame.img} className='w-8 me-4'></img>
                             <p className='poppins'>{ame.text}</p>
                         </div>
@@ -261,7 +261,7 @@ function MainPage() {
             <Slider {...settings2} ref={(slider) => (sliderRef2 = slider)}>
               {images2.map((img, index) => (
                 <div key={index} className="flex justify-center">
-                  <img src={img} className="h-[500px] rounded-lg w-full object-cover" alt={`Slide ${index}`} />
+                  <img src={img} className="sm:h-[200px] lg:h-[500px] rounded-lg w-full object-cover" alt={`Slide ${index}`} />
                 </div>
               ))}
             </Slider>
@@ -281,9 +281,9 @@ function MainPage() {
             </button>
           </div>
         </div>
-        <div className='px-28 py-20' id='sitemap'>
+        <div className='lg:px-28 px-4 py-20' id='sitemap'>
     <div className="flex justify-between items-center mb-6">
-        <p className='text-5xl americana font-bold'>
+        <p className=' text-2xl lg:text-5xl americana font-bold'>
             Site Plan
         </p>
         <a href="/images2/club1.jpeg" download className="bg-black rounded-lg text-sm text-white hover:bg-gray-800 px-4 py-2 transition">
@@ -292,9 +292,9 @@ function MainPage() {
     </div>
     <img src="/images2/club1.jpeg" className='cursor-pointer duration-300 hover:scale-105 transform transition-all'></img>
 </div>
-<div className='px-28 py-20' id='locationmap'>
+<div className='lg:px-28 px-4 py-20' id='locationmap'>
     <div className="flex justify-between items-center mb-6">
-        <p className='text-5xl americana font-bold'>
+        <p className=  ' text-2xl lg:text-5xl americana font-bold'>
             Location Map
         </p>
         <a href="/images2/locationMap3.jpg" download className="bg-black rounded-lg text-sm text-white hover:bg-gray-800 px-4 py-2 transition">

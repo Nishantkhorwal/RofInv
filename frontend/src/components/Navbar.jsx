@@ -52,12 +52,12 @@ function Navbar() {
        
           
  
-          <img src="images2/bgImage11.jpg" className="h-full w-full absolute brightness-90 inset-0 object-fill" alt="Background" />
+          <img src="images2/bgImage11.jpg" className="h-full w-full absolute object-cover brightness-90 inset-0 lg:object-fill" alt="Background" />
           
     {/* Navbar */}
     <div className={`flex flex-row justify-between lg:justify-start ${isScrolled ? "fixed top-0 left-0 w-full bg-black lg:bg-black shadow-lg" : "relative bg-black lg:bg-black"} z-50 py-6 px-5 lg:px-20 items-center transition-all duration-300`}>
-      <div className='me-32'>
-        <img src="images2/logo.png" alt="Logo" className='w-32' />
+      <div className='lg:me-32'>
+        <img src="images2/logo.png" alt="Logo" className=  ' w-20 lg:w-32' />
       </div>
       <div className="hidden lg:block">
         <ul className="flex flex-row text-sm text-white poppins space-x-8">
@@ -104,21 +104,44 @@ function Navbar() {
 
           {/* Sliding Menu */}
           <div className={`fixed top-0 right-0 h-screen w-3/4 bg-white z-50 transform ${menuOpen ? 'translate-x-0' : 'translate-x-full'} transition-transform duration-300 ease-in-out`}>
-            <RxCross2 onClick={toggleMenu} className='text-lg absolute right-4 top-4' />
-            <ul className="flex flex-col p-6 text-black space-y-4">
-              <a href='#home'><li className='cursor-pointer'>Home</li></a>
-              <a href='#about'><li className='cursor-pointer'>About</li></a>
-              <a href='#amenities'><li className='cursor-pointer'>Amenities</li></a>
-              <a href='#location'><li className='cursor-pointer'>Location Advantage</li></a>
+            <RxCross2 onClick={toggleMenu} className='text-lg absolute  right-4 top-4' />
+            <ul className="flex flex-col p-6 text-black lg:space-y-4">
+            <a href='/linkpage'><li className='cursor-pointer'>Home</li></a>
+          <a href='#about'><li className='cursor-pointer'>About</li></a>
+          
+          <a href='#location'><li className='cursor-pointer'>Location</li></a>
+          <a href='#amenities'><li className='cursor-pointer'>Amenities</li></a>
+          <a href='#club'><li className='cursor-pointer'>Club</li></a>
+          <a href='#sitemap'><li className='cursor-pointer'>Site Plan</li></a>
+          <a href='#locationmap'><li className='cursor-pointer'>Location Map</li></a>
+          <a href={localStorage.getItem("role") === "admin" ? "/sidebar" : "/home"}>
+          <li className='cursor-pointer'>Inventory</li>
+          </a>
+
               <li>
-                <div className="flex flex-row bg-gray-200 rounded-md items-center">
-                  <div className="bg-green-950 rounded-md text-center px-1 py-3">
-                    <MdPhoneInTalk className="text-lg text-white" />
-                  </div>
-                  <div className="px-2">
-                    <p className="text-sm font-semibold">Book Site Visit</p>
-                  </div>
-                </div>
+              <div className="relative">
+                  <li className='flex justify-between cursor-pointer items-center' onClick={toggleDropdown}>
+                    <p className='lg:me-2  '>Download</p> <MdKeyboardArrowDown className='' />
+                  </li>
+                
+
+                {/* Dropdown Content */}
+                {dropdown && (
+                  <ul className="bg-white rounded-md shadow-md text-black w-48 absolute mt-2 py-2">
+                    <a href='images2/club1.jpeg' download>
+                    <li className="cursor-pointer hover:bg-gray-100 px-4 py-2" >
+                      Site Plan
+                    </li>
+                    </a>
+                    <a href='images2/locationMap3.jpeg' download>
+                    <li className="cursor-pointer hover:bg-gray-100 px-4 py-2" >
+                      Location Map
+                    </li>
+                    </a>
+                  </ul>
+                )}
+              </div>
+                
               </li>
             </ul>
           </div>

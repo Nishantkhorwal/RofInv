@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { io } from "socket.io-client"; // Import the socket.io client
 import { RiArrowRightSLine } from "react-icons/ri";
 import { RiArrowLeftSLine } from "react-icons/ri";
+import { FaHome } from 'react-icons/fa';
 
 // Initialize the WebSocket connection
 const socket = io(`${import.meta.env.VITE_API_BASE_URL}`); // Replace with your backend URL
@@ -328,8 +329,8 @@ const renderProjectsTable = () => {
     <div className="bg-[#FFFDD0]">
       {/* Header */}
       <h2 className="text-2xl text-center font-bold lg:text-4xl mb-6">Project Inventories</h2>
-      <div className="flex justify-between items-center mb-5">
-        <div className="flex space-x-4">
+      <div className="flex flex-wrap justify-between gap-4 items-center mb-5">
+        <div className="flex flex-wrap gap-4 lg:gap-0 lg:space-x-4">
           {/* Project Dropdown */}
           <select
             value={selectedProject}
@@ -380,7 +381,7 @@ const renderProjectsTable = () => {
         </div>
 
         {/* Search Input */}
-        <div className="flex space-x-4">
+        <div className="flex flex-wrap gap-4  lg:space-x-4">
           <input
             type="text"
             placeholder="Search project..."
@@ -543,53 +544,56 @@ const userName = localStorage.getItem("userName") || "User";
     <div className="flex h-screen overflow-hidden">
       {/* Sidebar */}
       <div
-        className={`bg-[#F5F5DC] fixed lg:relative   h-full transition-all duration-300 ${isSidebarOpen ? 'w-64' : 'w-0 lg:w-16'} flex-shrink-0`}
-      >
-        <div className="flex border-b h-16 justify-between items-center px-4 py-4">
-          {isSidebarOpen ? (
-            <h1 className="text-gray-700 text-sm font-bold lg:text-xl">{userName}</h1>
-          ) : (
-            <button
-              onClick={toggleSidebar}
-              className="flex justify-center text-2xl text-gray-700 w-full focus:outline-none"
-            >
-              <img src='roflogo.svg' className='w-10'></img>
-            </button>
-          )}
-          {isSidebarOpen && (
-            <button
-              onClick={toggleSidebar}
-              className="text-2xl text-gray-700 focus:outline-none"
-            >
-              <img src='roflogo.svg' className='w-10'></img>
-            </button>
-          )}
-        </div>
+    className={`bg-[#F5F5DC] z-50 fixed lg:relative h-full transition-all duration-300 ${
+      isSidebarOpen ? 'w-64 left-0' : '-left-64 w-0'
+    } flex-shrink-0 top-0`}
+  >
+    <div className="flex border-b h-16 justify-between items-center px-4 py-4">
+      <h1 className="text-gray-700 text-sm font-bold lg:text-xl">{userName}</h1>
+      <button onClick={toggleSidebar} className="text-2xl text-gray-700">
+      <img src="roflogo.svg" className="w-10" />
+      </button>
+    </div>
 
-        {/* Sidebar Content */}
-        {isSidebarOpen && (
-          <ul className="mt-4 px-4 space-y-2">
-            <li
-              onClick={() => setActiveTab('projects')}
-              className={`text-gray-600 hover:bg-gray-300 px-2 py-2 rounded cursor-pointer ${
-                activeTab === 'projects' ? 'bg-gray-300' : ''
-              }`}
-            >
-              Projects
-            </li>
-            <li
-              onClick={handleLogout}
-              className="rounded text-gray-600 cursor-pointer hover:bg-gray-300 px-2 py-2"
-            >
-              Logout
-            </li>
-          </ul>
-        )}
-      </div>
+    {/* Sidebar Content */}
+    <ul className="mt-4 px-4 space-y-2">
+      <a href='/linkpage'>
+                    <li
+                      className={`text-gray-600 flex flex-row items-center justify-between hover:bg-gray-300 px-2 py-2 rounded cursor-pointer `}
+                    >
+                      <p>Home</p><FaHome/>
+                    </li>
+                    </a>
+      <li
+        onClick={() => setActiveTab('projects')}
+        className={`text-gray-600 hover:bg-gray-300 px-2 py-2 rounded cursor-pointer ${
+          activeTab === 'projects' ? 'bg-gray-300' : ''
+        }`}
+      >
+        Projects
+      </li>
+      <li
+        onClick={handleLogout}
+        className="rounded text-gray-600 cursor-pointer hover:bg-gray-300 px-2 py-2"
+      >
+        Logout
+      </li>
+    </ul>
+  </div>
+
+  {/* Always Visible Logo Button */}
+  {!isSidebarOpen && (
+    <button
+      onClick={toggleSidebar}
+      className="fixed top-4 left-4 z-50 bg-white p-2 rounded-full shadow-md"
+    >
+      <img src="roflogo.svg" className="w-10" />
+    </button>
+  )}
 
       {/* Main Content */}
       <div
-        className={`flex-grow overflow-y-scroll  py-20 bg-[#FFFDD0] transition-all duration-300 ${isSidebarOpen ? 'lg:pl-8' : 'px-6 lg:px-0 lg:pl-16'}`}
+        className={`flex-grow  overflow-y-scroll  py-20 bg-[#FFFDD0] transition-all duration-300 ${isSidebarOpen ? 'lg:pl-8' : 'px-6 lg:px-0 lg:pl-16'}`}
       >
         <div className="p-4">{renderContent()}</div>
       </div>
