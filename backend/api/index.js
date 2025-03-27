@@ -50,11 +50,25 @@ const io = new Server(server, {
 
 
 app.use(cors({
-  origin: '*',  // Allow all origins (for debugging, later restrict to allowedOrigins)
-  methods: ["GET", "POST", "PUT", "DELETE"],
+  origin: function (origin, callback) {
+    const allowedOrigins = [
+      'https://rofinventorymanagement.netlify.app',
+      'http://localhost:5173',
+      'https://rofconnect.com',
+    ];
+    
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   credentials: true,
   allowedHeaders: ["Content-Type", "Authorization"],
+  optionsSuccessStatus: 200
 }));
+
 
 
 app.use(express.json({ limit: '50mb' }));  // Adjust the size as needed
