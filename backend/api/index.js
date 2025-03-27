@@ -1,6 +1,6 @@
-import express from 'express'
-import mongoose from 'mongoose'
-import dotenv from 'dotenv'
+import express from 'express';
+import mongoose from 'mongoose';
+import dotenv from 'dotenv';
 dotenv.config();
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
@@ -10,63 +10,68 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
-import Inventory from './models/inventoryModel.js';
-import Project from './models/projectModel.js';
-import SaleRequest from './models/saleRequestModel.js';
 import { expireOldSaleRequests } from './controllers/projectController.js';
 import cron from 'node-cron';
 
-
-
-
+// MongoDB Connection
 mongoose
   .connect(process.env.MONGO)
-  .then(() => {
-    console.log('Connected to MongoDB');
-    // updatePLCField();
-
-  })
-  .catch((err) => {
-    console.log(err);
-  });
+  .then(() => console.log('Connected to MongoDB'))
+  .catch((err) => console.log(err));
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
 const server = createServer(app);
 
+// CORS Configuration (Must be on Top)
 const allowedOrigins = [
-  'https://rofinventorymanagement.netlify.app', // Production frontend
-  'http://localhost:5173',
-  'https://rofconnect.com', 
+  "https://rofconnect.com",
+  "https://rofinventorymanagement.netlify.app",
 ];
-const io = new Server(server, {
-  cors: {
-    origin: allowedOrigins, // Replace with your frontend's URL
-    methods: ["GET", "POST", "PUT", "DELETE" ], 
-    credentials: true, 
-  },
-});
-
 
 app.use(cors({
-  origin: ["https://rofconnect.com", "https://rofinventorymanagement.netlify.app"],
+  origin: allowedOrigins,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   credentials: true,
   allowedHeaders: ["Content-Type", "Authorization"],
   optionsSuccessStatus: 200,
 }));
 
+// Middleware to Ensure CORS Headers Apply to All Responses
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.header("Access-Control-Allow-Origin", origin);
+  }
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.header("Access-Control-Allow-Credentials", "true");
 
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+  next();
+});
 
-
-app.use(express.json({ limit: '50mb' }));  // Adjust the size as needed
+// Middleware
+app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(cookieParser());
+
+// Routes
 app.use('/api/project', projectRoutes);
 app.use('/api/user', userRoutes);
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
+// WebSocket (Socket.io)
+const io = new Server(server, {
+  cors: {
+    origin: allowedOrigins,
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  },
+});
 
 io.on('connection', (socket) => {
   console.log('A user connected');
@@ -75,16 +80,21 @@ io.on('connection', (socket) => {
     console.log('A user disconnected');
   });
 });
-server.listen(process.env.PORT, () => {
-  console.log('Server listening on port 3000!');
-});
 
-cron.schedule('0 * * * *', () => {  // Runs every hour
+// Run Cron Job Every Hour
+cron.schedule('0 * * * *', () => {
   console.log('Running expireOldSaleRequests cron job...');
   expireOldSaleRequests();
 });
 
+// Start Server
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`Server listening on port ${PORT}!`);
+});
+
 export { io };
+
 
 // const clearCollections = async () => {
 //   try {
