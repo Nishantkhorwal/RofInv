@@ -158,12 +158,32 @@ const ProjectList = () => {
   };
 
   // Handle form field changes
+  const [isChequeImageFilled, setIsChequeImageFilled] = useState(false);
+
+  // Handle form field changes
   const handleFormChange = (e) => {
-    const { name, value, type, files } = e.target;
-    setFormData({
-      ...formData,
-      [name]: type === 'file' ? files[0] : value
-    });
+    const { name, type, files, value } = e.target;
+  
+    if (type === "file" && files.length > 0) {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: files[0], // Store the actual file
+      }));
+  
+      // Update file name for UI display
+      setFileNames((prev) => ({
+        ...prev,
+        [name]: files[0].name || "Captured Image",
+      }));
+  
+      // Mark the field as filled (to remove required validation)
+      setIsChequeImageFilled(true);
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value,
+      });
+    }
   };
 
   // Handle form submission to hold the item
@@ -523,6 +543,7 @@ const renderProjectsTable = () => {
 
 
 const userName = localStorage.getItem("userName") || "User";
+const [fileNames, setFileNames] = useState({});
 
   // Render content based on the active tab
   const renderContent = () => {
@@ -600,59 +621,89 @@ const userName = localStorage.getItem("userName") || "User";
 
       {/* Sell Form Modal */}
       {selectedItem && (
-        <div className="flex bg-gray-700 bg-opacity-50 justify-center fixed inset-0 items-center z-50">
-          <div className="bg-white p-6 rounded-lg w-96">
-            <h2 className="text-xl font-bold mb-4">Sell Item: {selectedItem.unitNumber}</h2>
-            <form onSubmit={handleSubmitForm}>
-              <div className="mb-4">
-                <label className="block mb-2">Customer Name</label>
-                <input
-                  type="text"
-                  name="customerName"
-                  value={formData.customerName}
-                  onChange={handleFormChange}
-                  className="border border-gray-300 p-2 rounded w-full"
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2">PAN Card Image</label>
-                <input
-                  type="file"
-                  name="panCardImage"
-                  onChange={handleFormChange}
-                  className="border border-gray-300 p-2 rounded w-full"
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2">Cheque Image</label>
-                <input
-                  type="file"
-                  name="chequeImage"
-                  onChange={handleFormChange}
-                  className="border border-gray-300 p-2 rounded w-full"
-                  required
-                />
-              </div>
-              <div className="flex justify-end">
-                <button
-                  type="submit"
-                  className="bg-green-500 rounded text-white px-4 py-2"
-                >
-                  Place on Hold
-                </button>
-              </div>
-            </form>
-            <button
-              onClick={() => setSelectedItem(null)}
-              className="bg-red-500 rounded text-white mt-4 px-4 py-2"
-            >
-              Close
-            </button>
-          </div>
+  <div className="flex bg-gray-700 bg-opacity-50 justify-center fixed inset-0 items-center z-50">
+    <div className="bg-white p-6 rounded-lg w-96">
+      <h2 className="text-xl font-bold mb-4">Sell Item: {selectedItem.unitNumber}</h2>
+      <form onSubmit={handleSubmitForm}>
+        <div className="mb-4">
+          <label className="block mb-2">Customer Name</label>
+          <input
+            type="text"
+            name="customerName"
+            value={formData.customerName}
+            onChange={handleFormChange}
+            className="border border-gray-300 p-2 rounded w-full"
+            required
+          />
         </div>
-      )}
+        <div className="mb-4">
+          <label className="block mb-2">PAN Card Image</label>
+          <input
+            type="file"
+            name="panCardImage"
+            onChange={handleFormChange}
+            className="border border-gray-300 p-2 rounded w-full"
+            required
+          />
+        </div>
+        <div className="mb-4">
+  <label className="block mb-2">Cheque Image</label>
+  <div className="flex gap-2">
+  <input
+  type="file"
+  name="chequeImage"
+  accept="image/*"
+  onChange={handleFormChange}
+  className="border border-gray-300 p-2 rounded w-full"
+  required={!isChequeImageFilled} // Required only if no file is selected
+/>
+
+    <button
+      type="button"
+      onClick={() => {
+        const fileInput = document.getElementById("chequeCapture");
+        if (fileInput) {
+          fileInput.value = ""; // Reset the field before capturing
+          fileInput.click();
+        }
+      }}
+      className="bg-blue-500 text-white px-3 py-2 rounded"
+    >
+      Capture
+    </button>
+  </div>
+
+  {/* Hidden Camera Capture Input */}
+  <input
+    type="file"
+    id="chequeCapture"
+    name="chequeImage"
+    accept="image/*"
+    capture="environment"
+    onChange={handleFormChange}
+    className="hidden"
+  />
+
+  {/* Display Selected File Name */}
+  {fileNames.chequeImage && (
+    <p className="mt-2 text-sm text-gray-600">
+      Selected File: <span className="font-bold">{fileNames.chequeImage}</span>
+    </p>
+  )}
+</div>
+
+        <div className="flex justify-end">
+          <button type="submit" className="bg-green-500 rounded text-white px-4 py-2">
+            Place on Hold
+          </button>
+        </div>
+      </form>
+      <button onClick={() => setSelectedItem(null)} className="bg-red-500 rounded text-white mt-4 px-4 py-2">
+        Close
+      </button>
+    </div>
+  </div>
+)}
     </div>
   );
 };
