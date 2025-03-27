@@ -50,18 +50,12 @@ const io = new Server(server, {
 
 
 app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: '*',  // Allow all origins (for debugging, later restrict to allowedOrigins)
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true,
   allowedHeaders: ["Content-Type", "Authorization"],
-  optionsSuccessStatus: 200,
 }));
+
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }))
