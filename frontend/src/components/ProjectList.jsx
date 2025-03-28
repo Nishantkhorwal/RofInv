@@ -48,6 +48,7 @@ const ProjectList = () => {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
+    credentials: "include",
   })
     .then((res) => res.json())
     .then((data) => {
@@ -87,6 +88,7 @@ const ProjectList = () => {
             headers: {
               Authorization: `Bearer ${token}`,
             },
+            credentials: "include",
           });
           if (!response.ok) {
             throw new Error('Failed to fetch inventories');
@@ -207,8 +209,11 @@ const handleSubmitForm = async (e) => {
         headers: {
           Authorization: `Bearer ${token}`,
         },
+        
         method: 'POST',
-        body: formDataToSend
+        credentials: "include",
+        body: formDataToSend,
+        
       });
   
       const data = await response.json();
@@ -263,6 +268,7 @@ const handleSubmitForm = async (e) => {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json',
             },
+            credentials: "include",
           });
   
           if (!response.ok) throw new Error('Failed to fetch sale requests');
