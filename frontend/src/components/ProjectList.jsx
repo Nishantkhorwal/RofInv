@@ -4,6 +4,7 @@ import { io } from "socket.io-client"; // Import the socket.io client
 import { RiArrowRightSLine } from "react-icons/ri";
 import { RiArrowLeftSLine } from "react-icons/ri";
 import { FaHome } from 'react-icons/fa';
+import { RxCross2 } from "react-icons/rx";
 
 // Initialize the WebSocket connection
 const socket = io(`${import.meta.env.VITE_API_BASE_URL}`); // Replace with your backend URL
@@ -584,7 +585,7 @@ const [fileNames, setFileNames] = useState({});
     <div className="flex border-b h-16 justify-between items-center px-4 py-4">
       <h1 className="text-gray-700 text-sm font-bold lg:text-xl">{userName}</h1>
       <button onClick={toggleSidebar} className="text-2xl text-gray-700">
-      <img src="roflogo.svg" className="w-10" />
+      <RxCross2 className='w-10'/>
       </button>
     </div>
 
