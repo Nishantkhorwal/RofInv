@@ -187,6 +187,7 @@ const ProjectList = () => {
       });
     }
   };
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Handle form submission to hold the item
   // Handle form submission to hold the item
@@ -198,6 +199,7 @@ const handleSubmitForm = async (e) => {
       alert('Please fill in all fields and upload images.');
       return;
     }
+    setIsSubmitting(true);
     const token = localStorage.getItem('token');
     const formDataToSend = new FormData();
     formDataToSend.append('customerName', formData.customerName);
@@ -238,6 +240,10 @@ const handleSubmitForm = async (e) => {
       }
     } catch (error) {
       console.error('Error submitting form:', error);
+      
+    }
+    finally {
+      setIsSubmitting(false); // Re-enable button
     }
   };
   
@@ -699,9 +705,14 @@ const [fileNames, setFileNames] = useState({});
 </div>
 
         <div className="flex justify-end">
-          <button type="submit" className="bg-green-500 rounded text-white px-4 py-2">
-            Place on Hold
-          </button>
+        <button 
+  type="submit" 
+  className="bg-green-500 rounded text-white px-4 py-2"
+  disabled={isSubmitting}
+>
+  {isSubmitting ? "Submitting..." : "Place on Hold"}
+</button>
+
         </div>
       </form>
       <button onClick={() => setSelectedItem(null)} className="bg-red-500 rounded text-white mt-4 px-4 py-2">
