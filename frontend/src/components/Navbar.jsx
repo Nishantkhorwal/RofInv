@@ -133,7 +133,7 @@ function Navbar() {
                       Site Plan
                     </li>
                     </a>
-                    <a href='images2/locationMap3.jpeg' download>
+                    <a href='images2/locationMap3.jpg' download>
                     <li className="cursor-pointer hover:bg-gray-100 px-4 py-2" >
                       Location Map
                     </li>

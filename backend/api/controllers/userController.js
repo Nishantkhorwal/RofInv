@@ -2,6 +2,8 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { ROFUser } from "../models/userModel.js";
 import dotenv from 'dotenv';
+import SaleRequest from "../models/saleRequestModel.js";
+import Inventory from '../models/inventoryModel.js';
 
 dotenv.config();
 
@@ -20,6 +22,19 @@ export const deleteUserByAdmin = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found." });
     }
+
+    const saleRequests = await SaleRequest.find({ createdBy: userId });
+
+    // Collect inventory IDs from these sale requests
+    const inventoryIds = saleRequests.map(request => request.inventoryId);
+
+    // Update only inventory items that are in "Hold" status to "Unsold"
+    await Inventory.updateMany(
+      { _id: { $in: inventoryIds }, status: "Hold" },
+      { $set: { status: "Unsold" } }
+    );
+
+    await SaleRequest.deleteMany({ createdBy: userId });
 
     // Delete the user
     await ROFUser.findByIdAndDelete(userId);

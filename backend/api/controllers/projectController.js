@@ -471,7 +471,15 @@ export const expireOldSaleRequests = async () => {
 // Sale Requests
 export const handleSaleRequest = async (req, res, io) => {
   const { requestId } = req.params;
-  const { action } = req.body; // 'approve' or 'reject' action from the admin
+  const { 
+    action, 
+    customerName, 
+    panCardImagePath, 
+    chequeImagePath, 
+    customerInfo, 
+    unitDetails, 
+    paymentDetails 
+  } = req.body; // Allow admins to update these fields
 
   if (!['approve', 'reject'].includes(action)) {
     return res.status(400).json({ success: false, message: 'Invalid action. Must be either "approve" or "reject".' });
@@ -484,33 +492,43 @@ export const handleSaleRequest = async (req, res, io) => {
       return res.status(404).json({ success: false, message: 'Sale request not found.' });
     }
 
-    // Update the sale request status based on the admin's action
-    if (action === 'approve') {
-      saleRequest.status = 'Approved';
-    } else if (action === 'reject') {
-      saleRequest.status = 'Rejected';
-    }
-
-    // Save the updated sale request
-    await saleRequest.save();
-
-    // Find the inventory item associated with the sale request
+    // Find the associated inventory item
     const inventoryItem = await Inventory.findById(saleRequest.inventoryId);
     if (!inventoryItem) {
       return res.status(404).json({ success: false, message: 'Inventory item not found.' });
     }
 
-    // If the sale is approved, change the inventory status to "Sold"
+    // If no new value is provided, keep the existing value from inventory
+    saleRequest.customerName = customerName ?? inventoryItem.customerName;
+    saleRequest.panCardImagePath = panCardImagePath ?? inventoryItem.panCardImagePath;
+    saleRequest.chequeImagePath = chequeImagePath ?? inventoryItem.chequeImagePath;
+
+    // Ensure inventory is also updated with the same values
+    inventoryItem.customerName = saleRequest.customerName;
+    inventoryItem.panCardImagePath = saleRequest.panCardImagePath;
+    inventoryItem.chequeImagePath = saleRequest.chequeImagePath;
+
+    // Ensure required form details are filled before approval
     if (action === 'approve') {
-      inventoryItem.status = 'Sold';
+      if (!customerInfo || !unitDetails || !paymentDetails) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Customer, unit, and payment details must be provided before approving the request.' 
+        });
+      }
+      saleRequest.customerInfo = customerInfo;
+      saleRequest.unitDetails = unitDetails;
+      saleRequest.paymentDetails = paymentDetails;
     }
 
-    // If the sale is rejected, the item stays "Hold" (or revert status if necessary)
-    if (action === 'reject') {
-      inventoryItem.status = 'Unsold'; // or revert to the previous status if needed
-    }
+    // Update sale request status
+    saleRequest.status = action === 'approve' ? 'Approved' : 'Rejected';
 
-    // Save the updated inventory item
+    // Update inventory status if sale is approved or rejected
+    inventoryItem.status = action === 'approve' ? 'Sold' : 'Unsold';
+
+    // Save changes
+    await saleRequest.save();
     await inventoryItem.save();
 
     // Notify connected clients via WebSocket
@@ -535,6 +553,48 @@ export const handleSaleRequest = async (req, res, io) => {
 };
 
 
+
+// edit customer details
+
+export const editSaleRequestCustomerDetails = async (req, res) => {
+  const { requestId } = req.params;
+  const {  customerInfo, unitDetails, paymentDetails } = req.body;
+
+  try {
+    // Find the sale request
+    const saleRequest = await SaleRequest.findById(requestId);
+    if (!saleRequest) {
+      return res.status(404).json({ success: false, message: 'Sale request not found.' });
+    }
+
+    // Update nested customer details if provided
+    if (customerInfo) {
+      saleRequest.customerInfo = { ...saleRequest.customerInfo, ...customerInfo };
+    }
+    if (unitDetails) {
+      saleRequest.unitDetails = { ...saleRequest.unitDetails, ...unitDetails };
+    }
+    if (paymentDetails) {
+      saleRequest.paymentDetails = { ...saleRequest.paymentDetails, ...paymentDetails };
+    }
+
+    // Save changes
+    await saleRequest.save();
+
+    res.json({
+      success: true,
+      message: 'Customer details updated successfully.',
+      saleRequest,
+    });
+  } catch (error) {
+    console.error('Error updating customer details:', error);
+    res.status(500).json({ success: false, message: 'Error updating customer details.' });
+  }
+};
+
+
+
+
 export const getSaleRequests = async (req, res) => {
   try {
     // Fetch all sale requests with populated inventory details
@@ -542,7 +602,18 @@ export const getSaleRequests = async (req, res) => {
       .populate('inventoryId', 'customerName chequeImagePath panCardImagePath unitNumber type')
       .populate('createdBy', 'name');
 
-    res.status(200).json({ saleRequests });
+      const groupedRequests = saleRequests.reduce((acc, request) => {
+        const brokerName = request.createdBy.name;
+  
+        if (!acc[brokerName]) {
+          acc[brokerName] = [];
+        }
+  
+        acc[brokerName].push(request);
+        return acc;
+      }, {});
+
+    res.status(200).json({ saleRequests, groupedRequests });
   } catch (error) {
     console.error('Error fetching sale requests:', error);
     res.status(500).json({ message: 'Error fetching sale requests' });

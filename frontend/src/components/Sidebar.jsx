@@ -20,6 +20,7 @@ import { CiEdit } from "react-icons/ci";
 
 import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
+import BrokerDetails from './BrokerDetails';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
@@ -132,7 +133,7 @@ const Sidebar = () => {
       fetchInventories();
     }
     
-    if (activeTab === 'requests' || activeTab === 'dashboard') {
+    if (activeTab === 'projects' || activeTab === 'requests' || activeTab === 'dashboard') {
       const fetchSaleRequests = async () => {
         setLoading(true);
         setError(null);
@@ -159,10 +160,12 @@ const Sidebar = () => {
           }
           const data = await response.json();
   
-          console.log(data); // Log to check the data structure
+          // Log to check the data structure
   
           const saleRequests = data.saleRequests || []; // Get the array or an empty array if undefined
+          console.log("sale request",saleRequests); 
           setHasPendingRequests(saleRequests.some(request => request.status === 'Pending'));
+          console.log(hasPendingRequests);
   
           const pending = saleRequests.filter(request => request.status === 'Pending');
           const approved = saleRequests.filter(request => request.status === 'Approved');
@@ -185,6 +188,41 @@ const Sidebar = () => {
   const [requestSearchTerm, setRequestSearchTerm] = useState(""); // Renamed for uniqueness
   const [requestPage, setRequestPage] = useState(1);
   const requestItemsPerPage = 4; // Number of requests per page
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [showApprovalForm, setShowApprovalForm] = useState(false);
+  const [customerDetails, setCustomerDetails] = useState({
+    customerName: "",
+    panCardImagePath: "",
+    chequeImagePath: "",
+    customerInfo: {
+      guardianName: "",
+      age: "",
+      dateOfBirth: "",
+      nationality: "",
+      panNumber: "",
+      aadharCardNumber: "",
+      occupation: "",
+      residentStatus: "",
+      address: "",
+      state: "",
+      country: "",
+      pin: "",
+      email: "",
+      contactNumber: "",
+    },
+    unitDetails: {
+      unitType: "",
+      unitCost: "",
+      otherCharges: "",
+    },
+    paymentDetails: {
+      chequeNumber: "",
+      date: "",
+      amount: "",
+      bankName: "",
+    },
+  });
+
 
   const renderRequestsTable = () => {
     const categories = ['Pending', 'Approved', 'Rejected']; // Possible categories
@@ -194,6 +232,73 @@ const Sidebar = () => {
     const handleCategoryChange = (category) => {
       setSelectedCategory(category);
       setRequestPage(1); // Reset to page 1 when changing category
+    };
+    const handleApproveClick = (request) => {
+      const updatedUnitDetails = { ...request.unitDetails };
+
+      // Remove unitType explicitly
+      delete updatedUnitDetails.unitType;
+      setSelectedRequest(request); 
+      setCustomerDetails({
+        customerName: request.inventoryId.customerName || "",
+        panCardImagePath: request.inventoryId.panCardImagePath || "",
+        chequeImagePath: request.inventoryId.chequeImagePath || "",
+        customerInfo: request.customerInfo || {
+          guardianName: "",
+          age: "",
+          dateOfBirth: "",
+          nationality: "",
+          panNumber: "",
+          aadharCardNumber: "",
+          occupation: "",
+          residentStatus: "",
+          address: "",
+          state: "",
+          country: "",
+          pin: "",
+          email: "",
+          contactNumber: "",
+        },
+        unitDetails: request.unitDetails || {
+          
+          unitCost: "",
+          otherCharges: "",
+        },
+        paymentDetails: request.paymentDetails || {
+          chequeNumber: "",
+          date: "",
+          amount: "",
+          bankName: "",
+        },
+      });
+      setShowApprovalForm(true);
+    };
+    
+    const handleFormSubmit = async (e, requestId) => {
+      e.preventDefault();
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/project/requests/${requestId}`, {
+          method: "PUT",
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            ...customerDetails, // Include customer details
+            action: "approve",  // Explicitly send action field
+          }),
+        });
+    
+        const data = await response.json();
+        if (data.success) {
+          setShowApprovalForm(false);
+          console.log("Sale request approved successfully");
+        } else {
+          console.error(data.message);
+        }
+      } catch (error) {
+        console.error("Error approving request:", error);
+      }
     };
 
     const handleAction = async (requestId, action) => {
@@ -282,7 +387,7 @@ const Sidebar = () => {
                     {request.status === 'Pending' && (
                       <td className="text-center px-4 py-4">
                         <button
-                          onClick={() => handleAction(request._id, 'approve')}
+                           onClick={() => handleApproveClick(request)}
                           className="bg-green-500 rounded-lg shadow-xl text-sm text-white lg:mb-0 lg:mr-2 lg:px-3 lg:py-1 lg:text-base mb-2 px-1 py-1"
                         >
                           Approve
@@ -324,6 +429,124 @@ const Sidebar = () => {
           ) : (
             <p className="px-10 py-10">No {category.toLowerCase()} requests.</p>
           )}
+
+          {showApprovalForm && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-md flex justify-center items-center z-50">
+              <form
+                onSubmit={(e) => handleFormSubmit(e, selectedRequest._id)}
+                className="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl max-h-screen overflow-y-auto"
+              >
+                <h2 className="text-lg font-bold mb-4">Approve Sale Request</h2>
+
+                {/* Customer Details */}
+                <label className="block mb-2">
+                  Customer Name:
+                  <input
+                    type="text"
+                    value={customerDetails.customerName}
+                    onChange={(e) =>
+                      setCustomerDetails({ ...customerDetails, customerName: e.target.value })
+                    }
+                    className="w-full border p-2 rounded"
+                  />
+                </label>
+
+                {/* Prefilled Images */}
+                <div className="flex space-x-4">
+                  <div>
+                    <label className="block mb-2">Pan Card:</label>
+                    <img
+                      src={`${API_BASE_URL}/${customerDetails.panCardImagePath}`}
+                      alt="Pan Card"
+                      className="w-32 h-32 object-cover rounded border"
+                    />
+                  </div>
+                  <div>
+                    <label className="block mb-2">Cheque:</label>
+                    <img
+                      src={`${API_BASE_URL}/${customerDetails.chequeImagePath}`}
+                      alt="Cheque"
+                      className="w-32 h-32 object-cover rounded border"
+                    />
+                  </div>
+                </div>
+
+                {/* Customer Info */}
+                {Object.keys(customerDetails.customerInfo).map((field) => (
+                  <label className="block mb-2" key={field}>
+                    {field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, " $1")}:
+                    <input
+                      type={field === "dateOfBirth" ? "date" : field === "age" || field === "pin" ? "number" : "text"}
+                      value={customerDetails.customerInfo[field] || ""}
+                      onChange={(e) =>
+                        setCustomerDetails({
+                          ...customerDetails,
+                          customerInfo: { ...customerDetails.customerInfo, [field]: e.target.value },
+                        })
+                      }
+                      className="w-full border p-2 rounded"
+                    />
+                  </label>
+                ))}
+
+                {/* Unit Details */}
+                {Object.keys(customerDetails.unitDetails)
+  .filter((field) => field.toLowerCase() !== "unitType")
+  .map((field) => (
+    <label className="block mb-2" key={field}>
+      {field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, " $1")}:
+      <input
+        type={field === "unitCost" || field === "otherCharges" ? "number" : "text"}
+        value={customerDetails.unitDetails[field] || ""}
+        onChange={(e) =>
+          setCustomerDetails({
+            ...customerDetails,
+            unitDetails: { ...customerDetails.unitDetails, [field]: e.target.value },
+          })
+        }
+        className="w-full border p-2 rounded"
+      />
+    </label>
+  ))}
+
+
+                {/* Payment Details */}
+                {Object.keys(customerDetails.paymentDetails).map((field) => (
+                  <label className="block mb-2" key={field}>
+                    {field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, " $1")}:
+                    <input
+                      type={field === "date" ? "date" : field === "amount" ? "number" : "text"}
+                      value={customerDetails.paymentDetails[field] || ""}
+                      onChange={(e) =>
+                        setCustomerDetails({
+                          ...customerDetails,
+                          paymentDetails: { ...customerDetails.paymentDetails, [field]: e.target.value },
+                        })
+                      }
+                      className="w-full border p-2 rounded"
+                    />
+                  </label>
+                ))}
+
+                {/* Buttons */}
+                <div className="flex justify-end space-x-4 mt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowApprovalForm(false)}
+                    className="bg-gray-400 text-white px-4 py-2 rounded"
+                  >
+                    Cancel
+                  </button>
+                  <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded">
+                    Approve
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+
+
 
           {/* Pagination */}
           {totalPages > 1 && (
@@ -403,6 +626,45 @@ const Sidebar = () => {
 
 
   const handleStatusChange = async (inventoryId, newStatus) => {
+    console.log("Checking Sale Requests before status change...");
+  console.log("Sale Requests State:", saleRequests); 
+  console.log("Pending Requests:", saleRequests.pending);
+  console.log("Inventory ID to Check:", inventoryId);
+    // Find the current status of the inventory item
+    let currentStatus = "";
+    setProjectInventories((prevInventories) => {
+      prevInventories.forEach((project) => {
+        project.inventory.forEach((item) => {
+          if (item._id === inventoryId) {
+            currentStatus = item.status;
+          }
+        });
+      });
+      return prevInventories;
+    });
+    
+  
+    const hasPendingRequest = saleRequests.pending.some((request) => {
+      const requestInventoryId = request.inventoryId._id; // ✅ Extract the correct _id
+      console.log("Comparing:", requestInventoryId, "with", inventoryId);
+      return requestInventoryId === inventoryId; // Compare as strings
+    });
+
+    console.log("pending request",hasPendingRequest);
+    
+    if (hasPendingRequest) {
+      alert("This property has a pending sale request. Please reject the request before marking it as Sold.");
+      return;
+    }
+  
+    // If changing to "Sold", ask for confirmation
+    if (newStatus === "Sold" && currentStatus !== "Sold") {
+      const confirmSale = window.confirm(
+        "Are you sure you want to mark this property as Sold? Once sold, it cannot be changed later."
+      );
+      if (!confirmSale) return; // Stop if admin cancels
+    }
+  
     // Optimistic UI update: immediately reflect the status change in the UI
     setProjectInventories((prevInventories) => {
       return prevInventories.map((project) => {
@@ -418,8 +680,8 @@ const Sidebar = () => {
   
     try {
       const response = await fetch(`${API_BASE_URL}/api/project/inventory/${inventoryId}/update-status`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
       });
   
@@ -432,14 +694,14 @@ const Sidebar = () => {
           return prevInventories.map((project) => {
             project.inventory = project.inventory.map((item) => {
               if (item._id === inventoryId) {
-                return { ...item, status: item.status }; // Revert the change
+                return { ...item, status: currentStatus }; // Revert the change
               }
               return item;
             });
             return project;
           });
         });
-        alert(result.message || 'Failed to update status.');
+        alert(result.message || "Failed to update status.");
       }
     } catch (error) {
       // If an error occurs, revert the optimistic change
@@ -447,17 +709,18 @@ const Sidebar = () => {
         return prevInventories.map((project) => {
           project.inventory = project.inventory.map((item) => {
             if (item._id === inventoryId) {
-              return { ...item, status: item.status }; // Revert the change
+              return { ...item, status: currentStatus }; // Revert the change
             }
             return item;
           });
           return project;
         });
       });
-      console.error('Error updating status:', error);
-      alert('Error updating status.');
+      console.error("Error updating status:", error);
+      alert("Error updating status.");
     }
   };
+  
   
   
   const renderProjectsTable = () => {
@@ -641,12 +904,13 @@ const Sidebar = () => {
                         <select
                           value={item.status}
                           onChange={(e) => handleStatusChange(item._id, e.target.value)}
-                          className={`font-bold cursor-pointer text-center px-2 py-1 rounded ${
+                          disabled={item.status === "Sold"}
+                          className={`font-bold  text-center px-2 py-1 rounded ${
                             item.status === "Sold"
-                              ? "text-green-600"
+                              ? "text-green-600 cursor-not-allowed bg-gray-200 appearance-none pointer-events-none"
                               : item.status === "Unsold"
-                              ? "text-red-600"
-                              : "text-yellow-500"
+                              ? "text-red-600 cursor-pointer"
+                              : "text-yellow-500 cursor-pointer"
                           }`}
                         >
                           <option value="Sold">Sold</option>
@@ -1578,7 +1842,7 @@ const toggleAssignedProject = (user, projectId) => {
             );
       case 'profile' :
         return renderProfileUpdate(); 
-        case 'users':
+      case 'users':
           return (
             <div className="bg-white p-6 lg:p-12 rounded-xl shadow-lg">
               <h2 className="text-3xl font-bold mb-6">User Management</h2>
@@ -1613,7 +1877,7 @@ const toggleAssignedProject = (user, projectId) => {
         </div>
         {deleteConfirmation === user._id && (
         <div className="absolute top-10 right-3 z-50 bg-white shadow-lg p-3 rounded-md border">
-          <p className="text-sm">Are you sure you want to delete this user?</p>
+          <p className="text-sm">Are you sure you want to delete this user? It will delete all its history including its broker details but all its previous sold properties will remain sold.</p>
           <div className="flex space-x-2 mt-2">
             <button 
               onClick={() => handleDeleteUser(user._id)} 
@@ -1731,7 +1995,8 @@ const toggleAssignedProject = (user, projectId) => {
             </div>
           );
         
-             
+      case 'broker':
+         return <BrokerDetails/>;
 
         
       default:
@@ -1823,6 +2088,12 @@ const toggleAssignedProject = (user, projectId) => {
                 className={`text-gray-600 flex flex-row items-center justify-between hover:bg-gray-300 px-2 py-2 rounded cursor-pointer ${activeTab === 'users' ? 'bg-gray-300' : ''}`}
               >
                 Edit Users<CiEdit/>
+              </li>
+              <li
+                onClick={() => setActiveTab('broker')}
+                className={`text-gray-600 flex flex-row items-center justify-between hover:bg-gray-300 px-2 py-2 rounded cursor-pointer ${activeTab === 'broker' ? 'bg-gray-300' : ''}`}
+              >
+                Broker Details<CiEdit/>
               </li>
               <a href='/linkpage'>
               <li

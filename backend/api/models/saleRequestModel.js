@@ -17,15 +17,49 @@ const saleRequestSchema = new mongoose.Schema({
   },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'ROFUser', // Assuming you have a User model
+    ref: 'ROFUser',
     required: true,
   },
   createdAt: {
     type: Date,
     default: Date.now,
   },
+  // Fields taken from Inventory schema
+  customerName: { type: String }, // Already stored, no need for name in customerInfo
+  panCardImagePath: { type: String },
+  chequeImagePath: { type: String },
+
+  // Additional customer details (optional)
+  customerInfo: {
+    guardianName: { type: String },
+    age: { type: Number },
+    dateOfBirth: { type: Date },
+    nationality: { type: String },
+    panNumber: { type: String },
+    aadharCardNumber: { type: String },
+    occupation: { type: String },
+    residentStatus: { type: String },
+    address: { type: String },
+    state: { type: String },
+    country: { type: String },
+    pin: { type: String },
+    email: { type: String },
+    contactNumber: { type: String },
+  },
+  unitDetails: {
+    unitType: { type: String },
+    unitCost: { type: Number },
+    otherCharges: { type: Number },
+  },
+  paymentDetails: {
+    chequeNumber: { type: String },
+    date: { type: Date },
+    amount: { type: Number },
+    bankName: { type: String },
+  },
 });
 
 const SaleRequest = mongoose.model('SaleRequest', saleRequestSchema);
 
 export default SaleRequest;
+

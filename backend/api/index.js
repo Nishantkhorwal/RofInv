@@ -13,6 +13,10 @@ import { Server } from 'socket.io';
 import { expireOldSaleRequests } from './controllers/projectController.js';
 import cron from 'node-cron';
 
+// import Inventory from './models/inventoryModel.js';
+// import Project from './models/projectModel.js';
+// import SaleRequest from './models/saleRequestModel.js';
+
 // MongoDB Connection
 mongoose
   .connect(process.env.MONGO)
@@ -28,6 +32,7 @@ const server = createServer(app);
 const allowedOrigins = [
   "https://rofconnect.com",
   "https://rofinventorymanagement.netlify.app",
+  "http://localhost:5173",
 ];
 
 app.use(cors({
