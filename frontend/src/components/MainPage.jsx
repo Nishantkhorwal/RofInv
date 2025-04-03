@@ -121,9 +121,123 @@ function MainPage() {
           text : "Harmony Garden"
         },
         {
-          img : "/images2/park.png",
-          text : "Whispering Garden"
+          img : "/images2/greenMound.png",
+          text : "Green Mound"
         },
+        {
+          img : "/images2/waterbody.png",
+          text : "Waterbody"
+        },
+        {
+          img : "/images2/guestRoom.png",
+          text : "Guest Room"
+        },
+        {
+          img : "/images2/spa.png",
+          text : "Spa"
+        },
+        {
+          img : "/images2/activityarea.png",
+          text : "Activity Area"
+        },
+        {
+          img : "/images2/seatingtrellis.png",
+          text : "Seating Under Trellis"
+        },
+        {
+          img : "/images2/sculptures.png",
+          text : "Sculptures"
+        },
+        {
+          img : "/images2/amphitheater.png",
+          text : "Amphitheater"
+        },
+        {
+          img : "/images2/tabletennishall.png",
+          text : "Table Tennis Hall"
+        },
+        {
+          img : "/images2/tenniscourt.png",
+          text : "Squash Court"
+        },
+        {
+          img : "/images2/lounge.png",
+          text : "Lounge"
+        },
+        {
+          img : "/images2/swimmingpool.png",
+          text : "Swimming Pool"
+        },
+        {
+          img : "/images2/kidspool.png",
+          text : "Kids Pool"
+        },
+        {
+          img : "/images2/banquethall.png",
+          text : "Banquet Hall"
+        },
+        {
+          img : "/images2/deckarea.png",
+          text : "Deck Area"
+        },
+        {
+          img : "/images2/outdoordiningarea.png",
+          text : "Outdoor Dinning Area"
+        },
+        {
+          img : "/images2/avroom.png",
+          text : "AV Room"
+        },
+        {
+          img : "/images2/businesscentre.png",
+          text : "Business Centre"
+        },
+        {
+          img : "/images2/library.png",
+          text : "Library"
+        },
+        {
+          img : "/images2/ambulanceoncall.png",
+          text : "Ambulance"
+        },
+        {
+          img : "/images2/medicineroom.png",
+          text : "Medicine Room"
+        },
+        {
+          img : "/images2/indoorgames.png",
+          text : "Indoor Games"
+        },
+        {
+          img : "/images2/climbingwall.png",
+          text : "Climbing Wall"
+        },
+        {
+          img : "/images2/cricketpitch.png",
+          text : "Cricket Pitch"
+        },
+        {
+          img : "/images2/powerbackup.png",
+          text : "Power Backup"
+        },
+        {
+          img : "/images2/retailshops.png",
+          text : "Retail Shops"
+        },
+        {
+          img : "/images2/laundry.png",
+          text : "Laundry"
+        },
+        {
+          img : "/images2/gymnasium.png",
+          text : "Gymnasium"
+        },
+        {
+          img : "/images2/restaurants.png",
+          text : "Restaurants"
+        },
+
+
         
         
       ]
@@ -286,11 +400,11 @@ function MainPage() {
         <p className=' text-2xl lg:text-5xl americana font-bold'>
             Site Plan
         </p>
-        <a href="/images2/club1.jpeg" download className="bg-black rounded-lg text-sm text-white hover:bg-gray-800 px-4 py-2 transition">
+        <a href="/images2/sitemapPravasa.jpg" download className="bg-black rounded-lg text-sm text-white hover:bg-gray-800 px-4 py-2 transition">
             Download
         </a>
     </div>
-    <img src="/images2/club1.jpeg" className='cursor-pointer duration-300 hover:scale-105 transform transition-all'></img>
+    <img src="/images2/sitemapPravasa.jpg" className='cursor-pointer duration-300 hover:scale-105 transform transition-all'></img>
 </div>
 <div className='lg:px-28 px-4 py-20' id='locationmap'>
     <div className="flex justify-between items-center mb-6">

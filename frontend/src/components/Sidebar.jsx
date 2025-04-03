@@ -21,6 +21,10 @@ import { CiEdit } from "react-icons/ci";
 import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 import BrokerDetails from './BrokerDetails';
+import SaleForm from './SaleForm';
+import { FiEdit, FiPlus, FiSave, FiTrash } from 'react-icons/fi';
+import RequestEditForm from './RequestEditForm';
+import { PaymentForm } from './PaymentForm';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
@@ -103,12 +107,12 @@ const Sidebar = () => {
         try {
           // Retrieve token from localStorage
           const token = localStorage.getItem('token');
-          
+
           // Check if the token exists
           if (!token) {
             throw new Error('No authentication token found');
           }
-  
+
           // Make the API request with the Authorization header
           const response = await fetch(`${API_BASE_URL}/api/project/inventories`, {
             method: 'GET',
@@ -117,7 +121,7 @@ const Sidebar = () => {
               'Content-Type': 'application/json',
             },
           });
-  
+
           if (!response.ok) {
             throw new Error('Failed to fetch inventories');
           }
@@ -129,10 +133,10 @@ const Sidebar = () => {
           setLoading(false);
         }
       };
-  
+
       fetchInventories();
     }
-    
+
     if (activeTab === 'projects' || activeTab === 'requests' || activeTab === 'dashboard') {
       const fetchSaleRequests = async () => {
         setLoading(true);
@@ -140,12 +144,12 @@ const Sidebar = () => {
         try {
           // Retrieve token from localStorage
           const token = localStorage.getItem('token');
-          
+
           // Check if the token exists
           if (!token) {
             throw new Error('No authentication token found');
           }
-  
+
           // Make the API request with the Authorization header
           const response = await fetch(`${API_BASE_URL}/api/project/request`, {
             method: 'GET',
@@ -154,19 +158,19 @@ const Sidebar = () => {
               'Content-Type': 'application/json',
             },
           });
-  
+
           if (!response.ok) {
             throw new Error('Failed to fetch sale requests');
           }
           const data = await response.json();
-  
+
           // Log to check the data structure
-  
+
           const saleRequests = data.saleRequests || []; // Get the array or an empty array if undefined
-          console.log("sale request",saleRequests); 
+          console.log("sale request", saleRequests);
           setHasPendingRequests(saleRequests.some(request => request.status === 'Pending'));
           console.log(hasPendingRequests);
-  
+
           const pending = saleRequests.filter(request => request.status === 'Pending');
           const approved = saleRequests.filter(request => request.status === 'Approved');
           const rejected = saleRequests.filter(request => request.status === 'Rejected');
@@ -177,11 +181,11 @@ const Sidebar = () => {
           setLoading(false);
         }
       };
-  
+
       fetchSaleRequests();
     }
   }, [activeTab]);
-  
+
 
   // Render sale requests in a table
 
@@ -191,13 +195,13 @@ const Sidebar = () => {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [showApprovalForm, setShowApprovalForm] = useState(false);
   const [customerDetails, setCustomerDetails] = useState({
+    executiveName: "",
     customerName: "",
     panCardImagePath: "",
     chequeImagePath: "",
     customerInfo: {
       guardianName: "",
       age: "",
-      dateOfBirth: "",
       nationality: "",
       panNumber: "",
       aadharCardNumber: "",
@@ -215,13 +219,88 @@ const Sidebar = () => {
       unitCost: "",
       otherCharges: "",
     },
-    paymentDetails: {
-      chequeNumber: "",
-      date: "",
-      amount: "",
-      bankName: "",
-    },
+    paymentDetails: [
+      {
+        chequeNumber: "",
+        date: "",
+        amount: "",
+        bankName: "",
+      },
+    ],
   });
+  const [selectedBroker, setSelectedBroker] = useState("");
+  const [saleRequestId, setSaleRequestId] = useState(null); // New state to hold requestId
+const [showSaleEditForm, setShowSaleEditForm] = useState(false);
+
+const handleEditClick = (requestId) => {
+  setSaleRequestId(requestId);  // Store the requestId when edit is clicked
+  setShowSaleEditForm(true);    // Show the form
+};
+const [isOpen, setIsOpen] = useState(false);
+const [currentRequest, setCurrentRequest] = useState(null);
+const [paymentDetails, setPaymentDetails] = useState([]);
+const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+const [editingPaymentIndex, setEditingPaymentIndex] = useState(null);
+const [newPayment, setNewPayment] = useState({
+  chequeNumber: '',
+  date: new Date().toISOString().split('T')[0],
+  amount: '',
+  bankName: ''
+});
+
+useEffect(() => {
+  if (isOpen) {
+    const fetchData = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch(`${API_BASE_URL}/api/project/request`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : "",
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Error: ${response.status} - ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log("Fetched Data:", data);
+
+        // Check if saleRequests exists and has items
+        if (Array.isArray(data.saleRequests)) {
+          // Find the specific request you want or use the first one
+          const requestWithPayments = data.saleRequests.find(
+            request => Array.isArray(request.paymentDetails) && request.paymentDetails.length > 0
+          );
+
+          if (requestWithPayments) {
+            setPaymentDetails(requestWithPayments.paymentDetails);
+            console.log("payment details",paymentDetails)
+          } else {
+            console.log("No requests with payment details found");
+            setPaymentDetails([]); // Set empty array if no payments found
+          }
+        } else {
+          console.error("saleRequests is not an array");
+          setPaymentDetails([]);
+        }
+      } catch (error) {
+        console.error("Error fetching sale requests:", error.message);
+        setPaymentDetails([]);
+      }
+    };
+
+    fetchData();
+  }
+}, [isOpen]);
+const [selectedBrokerFilter, setSelectedBrokerFilter] = useState('');
+const [chequeStatusFilter, setChequeStatusFilter] = useState('all'); // 'all', 'pending', 'cleared'
+
+
+      
+
 
 
   const renderRequestsTable = () => {
@@ -238,20 +317,18 @@ const Sidebar = () => {
 
       // Remove unitType explicitly
       delete updatedUnitDetails.unitType;
-      setSelectedRequest(request); 
+      setSelectedRequest(request);
       setCustomerDetails({
+        executiveName: request.createdBy?.name || "No Executive",
         customerName: request.inventoryId.customerName || "",
         panCardImagePath: request.inventoryId.panCardImagePath || "",
         chequeImagePath: request.inventoryId.chequeImagePath || "",
         customerInfo: request.customerInfo || {
           guardianName: "",
-          age: "",
-          dateOfBirth: "",
-          nationality: "",
+
+
           panNumber: "",
           aadharCardNumber: "",
-          occupation: "",
-          residentStatus: "",
           address: "",
           state: "",
           country: "",
@@ -260,20 +337,20 @@ const Sidebar = () => {
           contactNumber: "",
         },
         unitDetails: request.unitDetails || {
-          
+
           unitCost: "",
-          otherCharges: "",
         },
-        paymentDetails: request.paymentDetails || {
+        paymentDetails: request.paymentDetails?.length > 0 ? request.paymentDetails : [{
           chequeNumber: "",
           date: "",
           amount: "",
           bankName: "",
-        },
+        }],
+        
       });
       setShowApprovalForm(true);
     };
-    
+
     const handleFormSubmit = async (e, requestId) => {
       e.preventDefault();
       try {
@@ -285,10 +362,11 @@ const Sidebar = () => {
           },
           body: JSON.stringify({
             ...customerDetails, // Include customer details
+             mainBroker: selectedBroker, 
             action: "approve",  // Explicitly send action field
           }),
         });
-    
+
         const data = await response.json();
         if (data.success) {
           setShowApprovalForm(false);
@@ -342,14 +420,216 @@ const Sidebar = () => {
         console.error('Error handling action:', error);
       }
     };
+    const handleDownload = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/project/requests/approved/download`, {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`, // Replace with actual token if needed
+          },
+        });
+    
+        if (!response.ok) {
+          throw new Error('Failed to download file');
+        }
+    
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'approved_requests.xlsx';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      } catch (error) {
+        console.error('Download failed:', error);
+      }
+    };
+    const handleDownloadPaymentDetails = async (saleRequestId) => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/project/requests/${saleRequestId}/payment/download`, {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`, // Replace with actual token if needed
+          },
+        });
+    
+        if (!response.ok) {
+          throw new Error('Failed to download file');
+        }
+    
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `payment_details_${saleRequestId}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      } catch (error) {
+        console.error('Download failed:', error);
+      }
+    };
+    
+    const handleOpenPaymentModal = async (request) => {
+      setCurrentRequest(request);
+      setPaymentDetails(request.paymentDetails || []);
+      setIsPaymentModalOpen(true);
+    };
+    
+    const handleAddPayment = async (newPayment) => {
+      try {
+        const token = localStorage.getItem("token");
+        
+        // Prepare the payment data (convert date to ISO string)
+        const paymentToAdd = {
+          ...newPayment,
+          date: new Date(newPayment.date).toISOString()
+        };
+    
+        // Note: Using PUT not POST, and singular "payment" endpoint
+        const response = await fetch(
+          `${API_BASE_URL}/api/project/requests/${currentRequest._id}/payment`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`
+            },
+            // Send as an array with the new payment
+            body: JSON.stringify({
+              paymentDetails: [paymentToAdd]
+            })
+          }
+        );
+    
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to add payment');
+        }
+    
+        const data = await response.json();
+        
+        // Update local state with the returned payments
+        setPaymentDetails(data.updatedPayments.map(p => ({
+          ...p,
+          date: p.date ? p.date.split('T')[0] : '' // Convert back to input format
+        })));
+        setPaymentDetails(data.updatedPayments);
+        
+        // Reset new payment form
+        setNewPayment({
+          chequeNumber: '',
+          date: new Date().toISOString().split('T')[0],
+          amount: '',
+          bankName: ''
+        });
+    
+      } catch (error) {
+        console.error("Error adding payment:", {
+          error,
+          currentRequestId: currentRequest._id,
+          payment: newPayment
+        });
+        alert(`Failed to add payment: ${error.message}`);
+      }
+    };
+    
+    const handleUpdatePayment = async (index, updatedPayment) => {
+      try {
+        const paymentId = paymentDetails[index]._id;
+        const token = localStorage.getItem("token");
+        
+        // Debug: Log the URL being called
+        const url = `${API_BASE_URL}/api/project/${currentRequest._id}/payments/${paymentId}`;
+        console.log("Attempting to call:", url);
+    
+        const response = await fetch(url, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify(updatedPayment)
+        });
+    
+        // Debug: Log the full response
+        console.log("Response status:", response.status);
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error("Error details:", errorData);
+          throw new Error(errorData.message || 'Failed to update payment');
+        }
+    
+        const data = await response.json();
+        console.log("Update successful:", data);
+        
+        // Update the frontend state with the response from backend
+        setPaymentDetails(prev => {
+          const updated = [...prev];
+          updated[index] = data.updatedPayment; // Use the updated data from backend
+          return updated;
+        });
+        setEditingPaymentIndex(null);
+      } catch (error) {
+        console.error("Full error details:", error);
+        alert(`Update failed: ${error.message}`);
+      }
+    };
+    const handleDeletePayment = async (requestId, paymentId) => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch(`${API_BASE_URL}/api/project/requests/${requestId}/deletepayments/${paymentId}`, {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+    
+        if (!response.ok) {
+          throw new Error('Failed to delete payment');
+        }
+    
+        // Update the frontend state to remove the deleted payment
+        setPaymentDetails(prev => prev.filter(payment => payment._id !== paymentId));
+    
+        alert("Payment deleted successfully");
+      } catch (error) {
+        console.error("Error deleting payment:", error);
+        alert(`Delete failed: ${error.message}`);
+      }
+    };
+    
+    
+    
+  
+
+
+
 
     const renderTable = (category) => {
       const requests = saleRequests[category.toLowerCase()] || [];
 
       // Apply search filter
-      const filteredRequests = requests.filter((request) =>
-        request.inventoryId.customerName?.toLowerCase().includes(requestSearchTerm.toLowerCase())
-      );
+      const filteredRequests = requests.filter((request) => {
+        // Search filter
+        const matchesSearch = request.inventoryId.customerName?.toLowerCase().includes(requestSearchTerm.toLowerCase());
+        
+        // Broker filter
+        const matchesBroker = !selectedBrokerFilter || request.createdBy?._id === selectedBrokerFilter;
+        
+        // Cheque status filter (only for Approved tab)
+        let matchesChequeStatus = true;
+        if (category === 'Approved' && chequeStatusFilter !== 'all') {
+          const hasPendingCheques = request.paymentDetails?.some(payment => !payment.isChequeCleared);
+          matchesChequeStatus = chequeStatusFilter === 'pending' 
+            ? hasPendingCheques 
+            : !hasPendingCheques;
+        }
+        
+        return matchesSearch && matchesBroker && matchesChequeStatus;
+      });
+    
 
       // Apply pagination
       const totalPages = Math.ceil(filteredRequests.length / requestItemsPerPage);
@@ -362,6 +642,7 @@ const Sidebar = () => {
           </p>
         );
       }
+      
 
       return (
         <>
@@ -369,25 +650,55 @@ const Sidebar = () => {
             <table className="table-auto bg-white border border-b-gray-950 border-collapse rounded-md shadow-xl text-center w-full mt-2">
               <thead className="border border-b-gray-950">
                 <tr>
-                  <th className="px-4 py-2">Executive</th>
+                  <th className="px-4 py-2">Broker</th>
                   <th className="px-4 py-2">Customer</th>
                   <th className="px-4 py-2">Unit</th>
+                  <th className="px-4 py-2">Floor</th>
                   <th className="px-4 py-2">Status</th>
+                  {category === 'Approved' && <th className="px-4 py-2">Cheques</th>}
+
+                  {category === 'Approved' && <th className="px-4 py-2">Edit Payment</th>}
                   {category === 'Pending' && <th className="px-4 py-2">Actions</th>}
                   <th className="text-center px-4 py-2">Download</th>
+                  
                 </tr>
               </thead>
               <tbody>
-                {currentRequests.map((request) => (
+                {currentRequests.map((request) => {
+
+
+                const pendingCheques = request.paymentDetails?.filter(
+                  payment => !payment.isChequeCleared
+                ).length || 0;
+                  return (
                   <tr key={request._id}>
                     <td className="px-4 py-4">{request.createdBy.name || 'No Executive'}</td>
                     <td className="px-4 py-4">{request.inventoryId.customerName || 'No Customer'}</td>
                     <td className="px-4 py-4">{request.inventoryId.unitNumber || 'No Unit '}</td>
+                    <td className="px-4 py-4">{request.inventoryId.floor || 'No Floor '}</td>
                     <td className="px-4 py-4">{request.status}</td>
+                    {request.status === 'Approved' && (
+                    <td className="px-4 py-4">
+                      <span className={`inline-block px-2 py-1 rounded-full text-xs font-semibold ${
+                        pendingCheques > 0 ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'
+                      }`}>
+                        {pendingCheques} pending
+                      </span>
+                    </td>
+                    )}
+                    {request.status === 'Approved' && (
+                    <td 
+                      onClick={() => handleOpenPaymentModal(request)}
+                      className="px-4 py-4 flex justify-center items-center mt-[10px]"
+                    >
+                      <FiEdit/>
+                    </td>
+                    )}
+                    
                     {request.status === 'Pending' && (
                       <td className="text-center px-4 py-4">
                         <button
-                           onClick={() => handleApproveClick(request)}
+                          onClick={() => handleApproveClick(request)}
                           className="bg-green-500 rounded-lg shadow-xl text-sm text-white lg:mb-0 lg:mr-2 lg:px-3 lg:py-1 lg:text-base mb-2 px-1 py-1"
                         >
                           Approve
@@ -422,19 +733,123 @@ const Sidebar = () => {
                         </button>
                       </a>
                     </td>
+                  {  request.status === 'Approved' && <td onClick={() => handleEditClick(request._id)} className="px-4 py-4 cursor-pointer"><FiEdit/></td>
+                  }
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           ) : (
             <p className="px-10 py-10">No {category.toLowerCase()} requests.</p>
           )}
 
+          {showSaleEditForm && <RequestEditForm requestId={saleRequestId} closeForm={() => setShowSaleEditForm(false)} />}
+          {isPaymentModalOpen && (
+  <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
+    <div className="bg-white p-6 rounded-lg shadow-lg w-[90%] max-w-2xl max-h-[90vh] overflow-y-auto">
+      {/* Modal Header */}
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-semibold">
+          Payment Details for {currentRequest?.inventoryId?.customerName || 'Customer'}
+        </h2>
+        <button 
+          onClick={() => {
+            
+            setIsPaymentModalOpen(false);
+            setEditingPaymentIndex(null);
+            window.location.reload();
+          }} 
+          className="text-red-500 font-bold text-xl"
+        >
+          <FiSave/>
+        </button>
+      </div>
+
+      {/* Existing Payments */}
+      <div className="mb-6">
+        <div className='flex relative w-full mb-2 justify-between items-center'>
+          <h3 className="text-lg font-medium ">Existing Payments</h3>
+          <button onClick={() => handleDownloadPaymentDetails(currentRequest?._id)} className='px-2 py-1 font-semibold bg-yellow-500 rounded-lg'>
+            Download Payment History
+          </button>
+        </div>  
+        {paymentDetails.length === 0 ? (
+          <p className="text-gray-500">No payment records found</p>
+        ) : (
+          <div className="space-y-3 relative">
+            {paymentDetails.map((payment, index) => (
+              <div key={payment._id || index} className="border p-3 rounded-lg relative">
+                {editingPaymentIndex === index ? (
+                  <PaymentForm
+                    payment={payment}
+                    onSave={(updatedPayment) => handleUpdatePayment(index, updatedPayment)}
+                    onCancel={() => setEditingPaymentIndex(null)}
+                  />
+                ) : (
+                  <>
+                    <div className="grid grid-cols-4 gap-2 relative">
+                      <div>
+                        <p className="text-sm font-medium">Cheque/UTR No:</p>
+                        <p>{payment.chequeNumber || '-'}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Amount:</p>
+                        <p>{payment.amount || '-'}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Bank:</p>
+                        <p>{payment.bankName || '-'}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Date:</p>
+                        <p>{payment.date ? new Date(payment.date).toLocaleDateString() : '-'}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Payment Status</p>
+                        <p>{payment.isChequeCleared ? "Cleared" : 'Not Cleared'}</p>
+                      </div>
+                    </div>
+                    <div className="absolute top-2 right-2 flex gap-2">
+                      <button onClick={() => setEditingPaymentIndex(index)} className="text-blue-500">
+                        <FiEdit />
+                      </button>
+                      <button onClick={() => handleDeletePayment(currentRequest._id, payment._id)} className="text-red-500">
+                        <FiTrash />
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Add New Payment */}
+      <div className="mt-6">
+        <h3 className="text-lg font-medium mb-2">Add New Payment</h3>
+        <PaymentForm
+          payment={newPayment}
+          onSave={handleAddPayment}
+          onCancel={() => setNewPayment({
+            chequeNumber: '',
+            date: new Date().toISOString().split('T')[0],
+            amount: '',
+            bankName: ''
+          })}
+        />
+      </div>
+    </div>
+  </div>
+)}  
+          
+
           {showApprovalForm && (
             <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-md flex justify-center items-center z-50">
               <form
                 onSubmit={(e) => handleFormSubmit(e, selectedRequest._id)}
-                className="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl max-h-screen overflow-y-auto"
+                className="bg-gray-300 p-6 rounded-lg shadow-xl w-full max-w-2xl max-h-screen overflow-y-auto"
               >
                 <h2 className="text-lg font-bold mb-4">Approve Sale Request</h2>
 
@@ -452,7 +867,7 @@ const Sidebar = () => {
                 </label>
 
                 {/* Prefilled Images */}
-                <div className="flex space-x-4">
+                {/* <div className="flex space-x-4">
                   <div>
                     <label className="block mb-2">Pan Card:</label>
                     <img
@@ -469,12 +884,16 @@ const Sidebar = () => {
                       className="w-32 h-32 object-cover rounded border"
                     />
                   </div>
-                </div>
+                </div> */}
 
                 {/* Customer Info */}
+                <div className='flex flex-row flex-wrap justify-between items-center'>
                 {Object.keys(customerDetails.customerInfo).map((field) => (
+                  <div key={field} className= {`${field === "contactNumber" ? "w-full" : "w-[48%]" } `}>
                   <label className="block mb-2" key={field}>
-                    {field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, " $1")}:
+                    {field === "guardianName"
+                      ? "Father Name" // Update label here
+                      : field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, " $1")}:
                     <input
                       type={field === "dateOfBirth" ? "date" : field === "age" || field === "pin" ? "number" : "text"}
                       value={customerDetails.customerInfo[field] || ""}
@@ -487,46 +906,96 @@ const Sidebar = () => {
                       className="w-full border p-2 rounded"
                     />
                   </label>
+                  </div>
                 ))}
+                </div>
 
                 {/* Unit Details */}
+                <div className='flex flex-row justify-between items-center'>
                 {Object.keys(customerDetails.unitDetails)
-  .filter((field) => field.toLowerCase() !== "unitType")
-  .map((field) => (
-    <label className="block mb-2" key={field}>
-      {field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, " $1")}:
-      <input
-        type={field === "unitCost" || field === "otherCharges" ? "number" : "text"}
-        value={customerDetails.unitDetails[field] || ""}
-        onChange={(e) =>
-          setCustomerDetails({
-            ...customerDetails,
-            unitDetails: { ...customerDetails.unitDetails, [field]: e.target.value },
-          })
-        }
-        className="w-full border p-2 rounded"
-      />
-    </label>
-  ))}
+                  .filter((field) => field.toLowerCase() !== "unitType")
+                  .map((field) => (
+                    <div key={field} className= {`w-full`}>
+                    <label className="block mb-2" >
+                      {field === "date"
+                        ? "Cheque Date" // Update label here
+                        : field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, " $1")}:
+                      <input
+                        type={field === "unitCost" || field === "otherCharges" ? "number" : "text"}
+                        value={customerDetails.unitDetails[field] || ""}
+                        onChange={(e) =>
+                          setCustomerDetails({
+                            ...customerDetails,
+                            unitDetails: { ...customerDetails.unitDetails, [field]: e.target.value },
+                          })
+                        }
+                        className="w-full border p-2 rounded"
+                      />
+                      
+                    </label>
+                    </div>
+                  ))}
+                  </div>
+
+                <label className="block mb-2">
+                  Broker Name:
+                  <input
+                    type="text"
+                    value={customerDetails.executiveName}
+                    readOnly
+                    className="w-full border p-2 rounded bg-gray-200"
+                  />
+                </label>
+                <label className="block mb-2">
+                  Main Broker:
+                  <select
+                    value={selectedBroker}
+                    onChange={(e) => setSelectedBroker(e.target.value)}
+                    className="w-full border p-2 rounded"
+                  >
+                    <option value="">Select a broker</option>
+                    {users.map((user) => (
+                      <option key={user._id} value={user._id}>
+                        {user.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+
 
 
                 {/* Payment Details */}
-                {Object.keys(customerDetails.paymentDetails).map((field) => (
-                  <label className="block mb-2" key={field}>
-                    {field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, " $1")}:
-                    <input
-                      type={field === "date" ? "date" : field === "amount" ? "number" : "text"}
-                      value={customerDetails.paymentDetails[field] || ""}
-                      onChange={(e) =>
-                        setCustomerDetails({
-                          ...customerDetails,
-                          paymentDetails: { ...customerDetails.paymentDetails, [field]: e.target.value },
-                        })
-                      }
-                      className="w-full border p-2 rounded"
-                    />
-                  </label>
-                ))}
+                {/* Payment Details */}
+{/* Payment Details
+<div className="flex flex-row justify-between flex-wrap items-center">
+  {customerDetails.paymentDetails.length > 0 &&
+    Object.keys(customerDetails.paymentDetails[0]).map((field) => (
+      <div key={field} className="w-[48%]">
+        <label className="block mb-2">
+          {field === "date" ? "Cheque Date" : field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, " $1")}:
+          <input
+            type={field === "date" ? "date" : field === "amount" ? "number" : "text"}
+            value={customerDetails.paymentDetails[0][field] || ""}
+            onChange={(e) =>
+              setCustomerDetails({
+                ...customerDetails,
+                paymentDetails: [
+                  {
+                    ...customerDetails.paymentDetails[0],
+                    [field]: e.target.value,
+                  },
+                ],
+              })
+            }
+            className="w-full border p-2 rounded"
+          />
+        </label>
+      </div>
+    ))}
+</div> */}
+
+
 
                 {/* Buttons */}
                 <div className="flex justify-end space-x-4 mt-4">
@@ -594,7 +1063,51 @@ const Sidebar = () => {
         </div>
 
         {/* Search Bar */}
-        <div className="flex justify-end mb-4">
+        <div className="flex justify-end mb-4 gap-4">
+        {selectedCategory === "Approved" && (selectedBrokerFilter || chequeStatusFilter !== 'all') && (
+  <button 
+    onClick={() => {
+      setSelectedBrokerFilter('');
+      setChequeStatusFilter('all');
+    }}
+    className="text-sm text-gray-500 hover:text-gray-700 ml-2"
+  >
+    Clear All Filters
+  </button>
+)}
+        {selectedCategory === "Approved" && (
+        <select
+        value={selectedBrokerFilter}
+        onChange={(e) => setSelectedBrokerFilter(e.target.value)}
+        className="border rounded-lg shadow-sm px-4 py-2"
+      >
+        <option value="">All Brokers</option>
+        {users.map((user) => (
+          <option key={user._id} value={user._id}>
+            {user.name}
+          </option>
+        ))}
+      </select>
+        )}
+        {selectedCategory === "Approved" && (
+        <select
+        value={chequeStatusFilter}
+        onChange={(e) => setChequeStatusFilter(e.target.value)}
+        className="border rounded-lg shadow-sm px-4 py-2"
+      >
+        <option value="all">All Payment</option>
+        <option value="pending">Not Cleared</option>
+        <option value="cleared">Cleared</option>
+      </select>
+        )}
+
+        {selectedCategory === "Approved" && (
+          
+  <button onClick={handleDownload} className='px-4 py-2 font-semibold bg-yellow-500 rounded-lg'>
+    Download Broker Details
+  </button>
+)}
+          
           <input
             type="text"
             placeholder="Search customer..."
@@ -622,14 +1135,15 @@ const Sidebar = () => {
   const [filterPLC, setFilterPLC] = useState("All"); // PLC filter state
   const [towerSearchQueries, setTowerSearchQueries] = useState({});
   const [isNotificationVisible, setIsNotificationVisible] = useState(true);
+  const [selectedInventoryForSale, setSelectedInventoryForSale] = useState(null);
 
 
 
   const handleStatusChange = async (inventoryId, newStatus) => {
     console.log("Checking Sale Requests before status change...");
-  console.log("Sale Requests State:", saleRequests); 
-  console.log("Pending Requests:", saleRequests.pending);
-  console.log("Inventory ID to Check:", inventoryId);
+    console.log("Sale Requests State:", saleRequests);
+    console.log("Pending Requests:", saleRequests.pending);
+    console.log("Inventory ID to Check:", inventoryId);
     // Find the current status of the inventory item
     let currentStatus = "";
     setProjectInventories((prevInventories) => {
@@ -642,29 +1156,38 @@ const Sidebar = () => {
       });
       return prevInventories;
     });
-    
-  
+
+
     const hasPendingRequest = saleRequests.pending.some((request) => {
       const requestInventoryId = request.inventoryId._id; // ✅ Extract the correct _id
       console.log("Comparing:", requestInventoryId, "with", inventoryId);
       return requestInventoryId === inventoryId; // Compare as strings
     });
 
-    console.log("pending request",hasPendingRequest);
-    
+    console.log("pending request", hasPendingRequest);
+
     if (hasPendingRequest) {
       alert("This property has a pending sale request. Please reject the request before marking it as Sold.");
       return;
     }
-  
+
     // If changing to "Sold", ask for confirmation
     if (newStatus === "Sold" && currentStatus !== "Sold") {
       const confirmSale = window.confirm(
-        "Are you sure you want to mark this property as Sold? Once sold, it cannot be changed later."
+          "Are you sure you want to mark this property as Sold? Once sold, it cannot be changed later."
       );
-      if (!confirmSale) return; // Stop if admin cancels
-    }
-  
+      if (!confirmSale) return;
+      
+      // Find the inventory item and set it for the sale form
+      projectInventories.forEach(project => {
+          const item = project.inventory.find(item => item._id === inventoryId);
+          if (item) {
+              setSelectedInventoryForSale(item);
+          }
+      });
+      return; // Exit here to show the form
+  }
+
     // Optimistic UI update: immediately reflect the status change in the UI
     setProjectInventories((prevInventories) => {
       return prevInventories.map((project) => {
@@ -677,14 +1200,14 @@ const Sidebar = () => {
         return project;
       });
     });
-  
+
     try {
       const response = await fetch(`${API_BASE_URL}/api/project/inventory/${inventoryId}/update-status`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json",'Authorization': `Bearer ${token}`, },
         body: JSON.stringify({ status: newStatus }),
       });
-  
+
       const result = await response.json();
       if (response.ok && result.success) {
         console.log(`Status updated to ${newStatus} successfully.`);
@@ -720,9 +1243,9 @@ const Sidebar = () => {
       alert("Error updating status.");
     }
   };
-  
-  
-  
+
+
+
   const renderProjectsTable = () => {
     // Filter projects based on search query, status, and selected project
     const filteredProjects = projectInventories
@@ -732,12 +1255,12 @@ const Sidebar = () => {
       })
       .map((project) => {
         const towerSearchQuery = towerSearchQueries[project.projectId] || "";
-  
+
         const filteredInventory = project.inventory.filter((item) => {
           if (filterStatus !== "All" && item.status !== filterStatus) return false;
           if (filterPLC === "Yes" && !item.PLC) return false;
           if (filterPLC === "No" && item.PLC) return false;
-  
+
           // Apply tower/unit search filter specific to this project
           if (
             towerSearchQuery &&
@@ -746,31 +1269,40 @@ const Sidebar = () => {
           ) {
             return false;
           }
-  
+
           return true;
         });
-  
+
         return {
           ...project,
           inventory: filteredInventory,
         };
       })
       .filter((project) => project.inventory.length > 0 || towerSearchQueries[project.projectId]);
-  
+
     const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const currentProjects = filteredProjects.slice(startIndex, startIndex + itemsPerPage);
-  
+
     if (loading) return <p>Loading inventories...</p>;
     if (error) return <p className="text-red-500">Error: {error}</p>;
-  
+
     return (
       <div className="py-10">
+        {selectedInventoryForSale && (
+            
+                    <SaleForm 
+                        inventory={selectedInventoryForSale}
+                        closeForm={() => setSelectedInventoryForSale(null)}
+                        userId={users._id} // Make sure you have access to user ID
+                    />
+                
+        )}
         {/* Header */}
         <h2 className="text-2xl text-center font-bold lg:text-4xl mb-6">
           Project Inventories
         </h2>
-  
+
         {/* Filters */}
         <div className="flex justify-between items-center mb-6">
           <div className="flex">
@@ -790,7 +1322,7 @@ const Sidebar = () => {
                 </option>
               ))}
             </select>
-  
+
             {/* Status Dropdown */}
             <select
               value={filterStatus}
@@ -802,7 +1334,7 @@ const Sidebar = () => {
               <option value="Hold">Hold</option>
               <option value="Sold">Sold</option>
             </select>
-            
+
             {/* PLC Filter Dropdown */}
             {/* <select
               value={filterPLC}
@@ -814,7 +1346,7 @@ const Sidebar = () => {
               <option value="No">No</option>
             </select> */}
           </div>
-  
+
           {/* Search Bar */}
           <input
             type="text"
@@ -824,14 +1356,14 @@ const Sidebar = () => {
             className="border rounded-lg shadow-sm px-4 py-2"
           />
         </div>
-  
+
         {/* Message for No Project Matches */}
         {searchQuery && filteredProjects.length === 0 && (
           <div className="text-center text-red-500 py-2">
             <p>No projects match this search result.</p>
           </div>
         )}
-  
+
         {/* Project Table */}
         {currentProjects.map((project) => (
           <div
@@ -855,99 +1387,98 @@ const Sidebar = () => {
                 className="border rounded-lg shadow-sm ml-4 px-4 py-2"
               />
             </div>
-  
+
             {/* Inventory Table or No Inventory Message */}
             {project.inventory.length > 0 ? (
               <div className="overflow-auto max-h-[100vh]">
-              <table className="table-auto text-center w-full mt-2">
-                <thead className='sticky top-0 bg-white z-10'>
-                  <tr>
-                    <th className="px-4 py-2">AREA (Sq.Yard)</th>
-                    <th className="px-4 py-2">W</th>
-                    <th className="px-4 py-2">L</th>
-                    <th className="px-4 py-2">Type</th>
-                    <th className="px-4 py-2">Unit No.</th>
-                    <th className="px-4 py-2">Floor</th>
-                    <th className="px-4 py-2">Carpet Area</th>
-                    <th className="px-4 py-2">Terrace Area</th>
-                    <th className="px-4 py-2">Stilt Area</th>
-                    <th className="px-4 py-2">Basement Area</th>
-                    <th className="px-4 py-2">Mumty</th>
-                    <th className="px-4 py-2">Common Area</th>
-                    <th className="px-4 py-2">Actual Area</th>
-                    <th className="px-1 py-2">Saleable Area</th>
-                    <th className="px-4 py-2">PLC</th>
-                    <th className="px-4 py-2">PLC Charges</th>
-                    <th className="px-4 py-2">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {project.inventory.map((item) => (
-                    <tr key={item._id}>
-                      <td className="px-4 py-2">{item.areaSqYard}</td>
-                      <td className="px-4 py-2">{item.W}</td>
-                      <td className="px-4 py-2">{item.L}</td>
-                      <td className="px-4 py-2">{item.type}</td>
-                      <td className="px-4 py-2">{item.unitNumber}</td>
-                      <td className="px-4 py-2">{item.floor}</td>
-                      <td className="px-4 py-2">{item.carpetArea}</td>
-                      <td className="px-4 py-2">{item.terraceArea}</td>
-                      <td className="px-4 py-2">{item.stiltArea}</td>
-                      <td className="px-4 py-2">{item.basementArea}</td>
-                      <td className="px-4 py-2">{item.mumty}</td>
-                      <td className="px-4 py-2">{item.commonArea}</td>
-                      <td className="px-4 py-2">{item.actualArea}</td>
-                      <td className="px-4 py-2">{item.saleableArea}</td>
-                      <td className="px-4 py-2">{item.PLC}</td>
-                      <td className="px-4 py-2">{item.plcCharges}</td>
-                      <td className="px-4 py-2">
-                        <select
-                          value={item.status}
-                          onChange={(e) => handleStatusChange(item._id, e.target.value)}
-                          disabled={item.status === "Sold"}
-                          className={`font-bold  text-center px-2 py-1 rounded ${
-                            item.status === "Sold"
-                              ? "text-green-600 cursor-not-allowed bg-gray-200 appearance-none pointer-events-none"
-                              : item.status === "Unsold"
-                              ? "text-red-600 cursor-pointer"
-                              : "text-yellow-500 cursor-pointer"
-                          }`}
-                        >
-                          <option value="Sold">Sold</option>
-                          <option value="Unsold">Unsold</option>
-                          <option value="Hold">Hold</option>
-                        </select>
-                      </td>
+                <table className="table-auto text-center w-full mt-2">
+                  <thead className='sticky top-0 bg-white z-10'>
+                    <tr>
+                      <th className="px-4 py-2">AREA (Sq.Yard)</th>
+                      <th className="px-4 py-2">W</th>
+                      <th className="px-4 py-2">L</th>
+                      <th className="px-4 py-2">Type</th>
+                      <th className="px-4 py-2">Unit No.</th>
+                      <th className="px-4 py-2">Floor</th>
+                      <th className="px-4 py-2">Status</th>
+                      <th className="px-4 py-2">Carpet Area</th>
+                      <th className="px-4 py-2">Terrace Area</th>
+                      <th className="px-4 py-2">Stilt Area</th>
+                      <th className="px-4 py-2">Basement Area</th>
+                      <th className="px-4 py-2">Mumty</th>
+                      <th className="px-4 py-2">Common Area</th>
+                      <th className="px-4 py-2">Actual Area</th>
+                      <th className="px-1 py-2">Saleable Area</th>
+                      <th className="px-4 py-2">PLC</th>
+                      <th className="px-4 py-2">PLC Charges</th>
+
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {project.inventory.map((item) => (
+                      <tr key={item._id}>
+                        <td className="px-4 py-2">{Number(item.areaSqYard).toFixed(2)}</td>
+                        <td className="px-4 py-2">{item.W}</td>
+                        <td className="px-4 py-2">{item.L}</td>
+                        <td className="px-4 py-2">{item.type}</td>
+                        <td className="px-4 py-2">{item.unitNumber}</td>
+                        <td className="px-4 py-2">{item.floor}</td>
+                        <td className="px-4 py-2">
+                          <select
+                            value={item.status}
+                            onChange={(e) => handleStatusChange(item._id, e.target.value)}
+                            disabled={item.status === "Sold"}
+                            className={`font-bold  text-center px-2 py-1 rounded ${item.status === "Sold"
+                                ? "text-green-600 cursor-not-allowed bg-gray-200 appearance-none pointer-events-none"
+                                : item.status === "Unsold"
+                                  ? "text-red-600 cursor-pointer"
+                                  : "text-yellow-500 cursor-pointer"
+                              }`}
+                          >
+                            <option value="Sold">Sold</option>
+                            <option value="Unsold">Unsold</option>
+                            <option value="Hold">Hold</option>
+                          </select>
+                        </td>
+                        <td className="px-4 py-2">{Number(item.carpetArea).toFixed(2)}</td>
+                        <td className="px-4 py-2">{Number(item.terraceArea).toFixed(2)}</td>
+                        <td className="px-4 py-2">{Number(item.stiltArea).toFixed(2)}</td>
+                        <td className="px-4 py-2">{Number(item.basementArea).toFixed(2)}</td>
+                        <td className="px-4 py-2">{Number(item.mumty).toFixed(2)}</td>
+                        <td className="px-4 py-2">{Number(item.commonArea).toFixed(2)}</td>
+                        <td className="px-4 py-2">{Number(item.actualArea).toFixed(2)}</td>
+                        <td className="px-4 py-2">{item.saleableArea}</td>
+                        <td className="px-4 py-2">{item.PLC}</td>
+                        <td className="px-4 py-2">{item.plcCharges}</td>
+
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             ) : (
               <p className='px-20 py-10'>No Unit or Tower matches this search result.</p>
             )}
           </div>
         ))}
-  
+
         {/* Pagination Controls */}
         {totalPages > 1 && (
           <div className="flex justify-center items-center mb-3 mt-6">
             <button
               disabled={currentPage === 1}
               onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              className={`mx-2 text-black text-3xl rounded-md ${
-                currentPage === 1 ? "text-gray-400 cursor-not-allowed" : ""
-              }`}
+              className={`mx-2 text-black text-3xl rounded-md ${currentPage === 1 ? "text-gray-400 cursor-not-allowed" : ""
+                }`}
             >
               <RiArrowLeftSLine />
             </button>
-  
+
             <button
               disabled={currentPage === totalPages}
               onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-              className={`mx-2 text-black text-3xl rounded-md ${
-                currentPage === totalPages ? "text-gray-400 cursor-not-allowed" : ""
-              }`}
+              className={`mx-2 text-black text-3xl rounded-md ${currentPage === totalPages ? "text-gray-400 cursor-not-allowed" : ""
+                }`}
             >
               <RiArrowRightSLine />
             </button>
@@ -957,18 +1488,18 @@ const Sidebar = () => {
       </div>
     );
   };
-   
+
   const [chosenProject, setChosenProject] = useState(null);
   const renderDashboardTable = () => {
     // State to store the selected project
-    
-    
+
+
     const userName = localStorage.getItem("userName") || "Manish Mittal";
-    
+
     // Filtered projectInventories based on the chosen project
     const selectedProjectData = chosenProject
-        ? projectInventories.filter(project => project.projectName === chosenProject)
-        : projectInventories;
+      ? projectInventories.filter(project => project.projectName === chosenProject)
+      : projectInventories;
 
     const totalProperties = selectedProjectData.reduce((total, project) => total + project.inventory.length, 0);
 
@@ -983,7 +1514,7 @@ const Sidebar = () => {
     const holdProperties = selectedProjectData.reduce((total, project) => {
       return total + project.inventory.filter(item => item.status === 'Hold').length;
     }, 0);
-    
+
     const dataByMonthSold = {};
     const dataByMonthHold = {};
 
@@ -1057,23 +1588,23 @@ const Sidebar = () => {
       <>
         <div className='pe-20'>
           <div className='flex flex-row justify-between items-center py-5'>
-          <div className='flex flex-row justify-between items-center space-x-6'>
-            <h1 className='text-3xl font-bold uppercase'>Dashboard</h1>
-            
-            <div className="relative">
-              <select
-                value={chosenProject || ''}
-                onChange={(e) => setChosenProject(e.target.value)}
-                className="border-2 p-2 rounded-lg"
-              >
-                <option value="">All Projects</option>
-                {projectInventories.map((project) => (
-                  <option key={project.projectName} value={project.projectName}>
-                    {project.projectName}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <div className='flex flex-row justify-between items-center space-x-6'>
+              <h1 className='text-3xl font-bold uppercase'>Dashboard</h1>
+
+              <div className="relative">
+                <select
+                  value={chosenProject || ''}
+                  onChange={(e) => setChosenProject(e.target.value)}
+                  className="border-2 p-2 rounded-lg"
+                >
+                  <option value="">All Projects</option>
+                  {projectInventories.map((project) => (
+                    <option key={project.projectName} value={project.projectName}>
+                      {project.projectName}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
             <div className='relative'>
               <div className='flex flex-row cursor-pointer items-center' onClick={toggleDropdown}>
@@ -1089,7 +1620,7 @@ const Sidebar = () => {
                 </div>
               )}
             </div>
-            
+
           </div>
 
           <div className='py-5'>
@@ -1188,7 +1719,7 @@ const Sidebar = () => {
         </div>
       </>
     );
-};
+  };
 
 
   const fieldLabelMap = {
@@ -1212,51 +1743,51 @@ const Sidebar = () => {
 
     status: "Status", // This is always included for executives
   };
-  
+
   const [originalProfileName, setOriginalProfileName] = useState('');
   const [originalProfilePhone, setOriginalProfilePhone] = useState('');
-    const [profileName, setProfileName] = useState('');
-    const [profilePhone, setProfilePhone] = useState('');
-    const [profilePassword, setProfilePassword] = useState('');
-    const [profileLoading, setProfileLoading] = useState(false);
-    const [profileError, setProfileError] = useState('');
-    const [profileSuccess, setProfileSuccess] = useState('');
-    const [isEditing, setIsEditing] = useState(false);
-    const [showPassword, setShowPassword] = useState(false);
-    const token = localStorage.getItem('token');
-    useEffect(() => {
-      const fetchUserData = async () => {
-        if (!token) {
-          setProfileError('User not authenticated.');
-          return;
+  const [profileName, setProfileName] = useState('');
+  const [profilePhone, setProfilePhone] = useState('');
+  const [profilePassword, setProfilePassword] = useState('');
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [profileError, setProfileError] = useState('');
+  const [profileSuccess, setProfileSuccess] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const token = localStorage.getItem('token');
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (!token) {
+        setProfileError('User not authenticated.');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/user/get`, {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          setProfileName(data.user.name);
+          setOriginalProfileName(data.user.name); // Store original name
+          setProfilePhone(data.user.phone);
+          setOriginalProfilePhone(data.user.phone); // Store original phone
+        } else {
+          setProfileError(data.message || 'Error fetching user data.');
         }
-    
-        try {
-          const response = await fetch(`${API_BASE_URL}/api/user/get`, {
-            method: 'GET',
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-    
-          const data = await response.json();
-    
-          if (response.ok) {
-            setProfileName(data.user.name);
-            setOriginalProfileName(data.user.name); // Store original name
-            setProfilePhone(data.user.phone);
-            setOriginalProfilePhone(data.user.phone); // Store original phone
-          } else {
-            setProfileError(data.message || 'Error fetching user data.');
-          }
-        } catch (err) {
-          setProfileError('Error fetching user data.');
-        }
-      };
-    
-      fetchUserData();
-    }, [token]);
-    
+      } catch (err) {
+        setProfileError('Error fetching user data.');
+      }
+    };
+
+    fetchUserData();
+  }, [token]);
+
   const renderProfileUpdate = () => {
     const handleProfileInputChange = (e) => {
       const { name, value } = e.target;
@@ -1268,37 +1799,37 @@ const Sidebar = () => {
         setProfilePassword(value);
       }
     };
-  
+
     const handleProfileUpdate = async () => {
       const updatedFields = {};
-    
+
       // Only include fields with non-empty values
       if (profileName.trim() !== '') {
         updatedFields.name = profileName;
       } else {
         updatedFields.name = profileName || originalProfileName; // Keep the original value if blank
       }
-    
+
       if (profilePhone.trim() !== '') {
         updatedFields.phone = profilePhone;
       } else {
         updatedFields.phone = profilePhone || originalProfilePhone; // Keep the original value if blank
       }
-    
+
       if (profilePassword.trim() !== '') {
         updatedFields.password = profilePassword;
       }
-    
+
       // Check if there are any valid fields to update
       if (Object.keys(updatedFields).length === 0) {
         setProfileError('At least one field with a non-empty value is required for update.');
         return;
       }
-    
+
       setProfileLoading(true);
       setProfileError('');
       setProfileSuccess('');
-    
+
       try {
         const response = await fetch(`${API_BASE_URL}/api/user/update`, {
           method: 'PUT',
@@ -1308,9 +1839,9 @@ const Sidebar = () => {
           },
           body: JSON.stringify(updatedFields),
         });
-    
+
         const data = await response.json();
-    
+
         if (response.ok) {
           setProfileSuccess('Profile updated successfully!');
           setIsEditing(false); // Stop editing once update is successful
@@ -1326,101 +1857,101 @@ const Sidebar = () => {
         setProfileLoading(false);
       }
     };
-    
-    
-  
+
+
+
     return (
       <div className="flex justify-center min-h-screen" >
         <div className='flex justify-center items-center relative'>
-        
 
-        
-        <div className='flex flex-col bg-white rounded-lg shadow-xl px-20 py-10 relative'>
-        <MdModeEditOutline className='absolute cursor-pointer right-4 top-4'
-         onClick={() => setIsEditing(true)} />
-        <div className='flex justify-center items-center'><FaCircleUser className='text-8xl mb-8'/></div>
-        <div>   
-        <div className='flex justify-center items-center'><h1  className="text-3xl font-semibold">Profile</h1></div>
-  
-        {profileError && <p className="text-red-600">{profileError}</p>}
-        {profileSuccess && <p className="text-green-600">{profileSuccess}</p>}
-  
-        <div className="mt-4 profile-update-form">
-          {isEditing ? (
-            <>
-              <label className="block mb-2">Name</label>
-              <input
-                type="text"
-                name="name"
-                value={profileName}
-                onChange={handleProfileInputChange}
-                className="border p-2 w-full mb-4"
-              />
-  
-              <label className="block mb-2">Phone</label>
-              <input
-                type="text"
-                name="phone"
-                value={profilePhone}
-                onChange={handleProfileInputChange}
-                className="border p-2 w-full mb-4"
-              />
-               <div className='relative'>
-              <label className="block mb-2">Password</label>
-              <input
-                type={showPassword ? "text" : "password"}
-                name="password"
-                value={profilePassword}
-                onChange={handleProfileInputChange}
-                className="border p-2 w-full mb-4"
-              />
-              <button
-               type="button"
-               onClick={() => setShowPassword(!showPassword)}
-               className="text-gray-600 absolute right-4 top-11"
-               >
-                {showPassword ? <FaEyeSlash /> : <FaEye />}
-              </button>
+
+
+          <div className='flex flex-col bg-white rounded-lg shadow-xl px-20 py-10 relative'>
+            <MdModeEditOutline className='absolute cursor-pointer right-4 top-4'
+              onClick={() => setIsEditing(true)} />
+            <div className='flex justify-center items-center'><FaCircleUser className='text-8xl mb-8' /></div>
+            <div>
+              <div className='flex justify-center items-center'><h1 className="text-3xl font-semibold">Profile</h1></div>
+
+              {profileError && <p className="text-red-600">{profileError}</p>}
+              {profileSuccess && <p className="text-green-600">{profileSuccess}</p>}
+
+              <div className="mt-4 profile-update-form">
+                {isEditing ? (
+                  <>
+                    <label className="block mb-2">Name</label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={profileName}
+                      onChange={handleProfileInputChange}
+                      className="border p-2 w-full mb-4"
+                    />
+
+                    <label className="block mb-2">Phone</label>
+                    <input
+                      type="text"
+                      name="phone"
+                      value={profilePhone}
+                      onChange={handleProfileInputChange}
+                      className="border p-2 w-full mb-4"
+                    />
+                    <div className='relative'>
+                      <label className="block mb-2">Password</label>
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        name="password"
+                        value={profilePassword}
+                        onChange={handleProfileInputChange}
+                        className="border p-2 w-full mb-4"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="text-gray-600 absolute right-4 top-11"
+                      >
+                        {showPassword ? <FaEyeSlash /> : <FaEye />}
+                      </button>
+                    </div>
+
+                    <button
+                      onClick={handleProfileUpdate}
+                      disabled={profileLoading}
+                      className={`bg-blue-500 text-white p-2 rounded ${profileLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      {profileLoading ? 'Updating...' : 'Update Profile'}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div className="profile-info">
+                      <p className='text-xl mb-2'><strong>Name:</strong> {profileName}</p>
+                      <p className='text-xl'><strong>Phone:</strong> {profilePhone}</p>
+                    </div>
+                  </>
+                )}
               </div>
-  
-              <button
-                onClick={handleProfileUpdate}
-                disabled={profileLoading}
-                className={`bg-blue-500 text-white p-2 rounded ${profileLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                {profileLoading ? 'Updating...' : 'Update Profile'}
-              </button>
-            </>
-          ) : (
-            <>
-              <div className="profile-info">
-                <p className='text-xl mb-2'><strong>Name:</strong> {profileName}</p>
-                <p className='text-xl'><strong>Phone:</strong> {profilePhone}</p>
-              </div>
-            </>
-          )}
-        </div>
-        </div>
-        </div>
+            </div>
+          </div>
         </div>
       </div>
     );
   };
-  
-  
+
+
   const [users, setUsers] = useState([]); // Store users
   const [editingUser, setEditingUser] = useState(null); // Track user being edited
   const [editableData, setEditableData] = useState({}); // Store edited user data
-  
+
   // Fetch Users from API
   useEffect(() => {
     const token = localStorage.getItem("token"); // Retrieve token from storage
-  
+
     if (!token) {
       console.error("No token found! Redirecting to login...");
       return; // Optionally, redirect to login
     }
-  
+
     fetch(`${API_BASE_URL}/api/user/all`, {
       method: "GET",
       headers: {
@@ -1442,65 +1973,71 @@ const Sidebar = () => {
   }, []);
 
 
-  
-  
+
+
   const handleEditChange = (userId, field, value) => {
-    setEditableData((prev) => ({
+    setEditableData((prev) => {
+      const updatedData = {
         ...prev,
         [userId]: {
-            ...prev[userId] || {},  // Ensure the user object exists
-            [field]: value,
+          ...(prev[userId] || {}),
+          [field]: value,
         },
-    }));
-};
-
-const toggleVisibleField = (userId, field) => {
-    setEditableData((prev) => {
-        const userFields = prev[userId]?.visibleFields || new Set();
-        const updatedFields = new Set(userFields);
-        updatedFields.has(field) ? updatedFields.delete(field) : updatedFields.add(field);
-
-        return {
-            ...prev,
-            [userId]: {
-                ...prev[userId] || {},
-                visibleFields: updatedFields,
-            },
-        };
+      };
+      console.log("Updated Data:",updatedData)
+      return { ...updatedData }; // Ensure new reference
     });
-};
-
-const toggleAssignedProject = (user, projectId) => {
-  setEditableData((prev) => {
-    const currentProjects = new Set(prev[user._id]?.assignedProjects || user.assignedProjects || []);
-
-    if (currentProjects.has(projectId)) {
-      currentProjects.delete(projectId);
-    } else {
-      currentProjects.add(projectId);
-    }
-
-    return {
-      ...prev,
-      [user._id]: {
-        ...prev[user._id],
-        assignedProjects: Array.from(currentProjects),
-      },
-    };
-  });
-};
-
-
-
+  };
   
+  
+
+  const toggleVisibleField = (userId, field) => {
+    setEditableData((prev) => {
+      const userFields = prev[userId]?.visibleFields || new Set();
+      const updatedFields = new Set(userFields);
+      updatedFields.has(field) ? updatedFields.delete(field) : updatedFields.add(field);
+
+      return {
+        ...prev,
+        [userId]: {
+          ...prev[userId] || {},
+          visibleFields: updatedFields,
+        },
+      };
+    });
+  };
+
+  const toggleAssignedProject = (user, projectId) => {
+    setEditableData((prev) => {
+      const currentProjects = new Set(prev[user._id]?.assignedProjects || user.assignedProjects || []);
+
+      if (currentProjects.has(projectId)) {
+        currentProjects.delete(projectId);
+      } else {
+        currentProjects.add(projectId);
+      }
+
+      return {
+        ...prev,
+        [user._id]: {
+          ...prev[user._id],
+          assignedProjects: Array.from(currentProjects),
+        },
+      };
+    });
+  };
+
+
+
+
   // Save Updated User Data
   const saveUserChanges = async (userId) => {
     try {
       const originalUser = users.find(user => user._id === userId);
-      
+
       // Check what is currently stored
       console.log("Before Update:", originalUser);
-  
+
       // Ensure we preserve fields
       const updatedUser = {
         ...editableData[userId],
@@ -1510,9 +2047,18 @@ const toggleAssignedProject = (user, projectId) => {
       if (editableData[userId]?.password) {
         updatedUser.password = editableData[userId].password;
       }
-  
+      if (editableData[userId]?.email !== undefined) {
+        updatedUser.email = editableData[userId].email;
+      }
+      if (editableData[userId]?.gstNumber !== undefined) {
+        updatedUser.gstNumber = editableData[userId].gstNumber;
+      }
+      if (editableData[userId]?.reraNumber !== undefined) {
+        updatedUser.reraNumber = editableData[userId].reraNumber;
+      }
+
       console.log("Payload Sent to API:", updatedUser); // Check if visibleFields and assignedProjects are correct
-  
+
       const res = await fetch(`${API_BASE_URL}/api/user/update/${userId}`, {
         method: "PUT",
         headers: {
@@ -1521,47 +2067,54 @@ const toggleAssignedProject = (user, projectId) => {
         },
         body: JSON.stringify(updatedUser),
       });
-  
+
       if (!res.ok) throw new Error("Update failed");
-  
+
       const updatedData = await res.json(); // Get response data
-  
+
       console.log("Response from API:", updatedData); // Check if backend modifies the data
-  
+
       alert("User updated successfully!");
       setEditingUser(null);
-  
+
       // Ensure we update users with preserved fields
       setUsers((prev) =>
         prev.map((u) =>
           u._id === userId
             ? {
-                ...u,
-                name: updatedData.name,
-                phone: updatedData.phone,
-                visibleFields: updatedData.visibleFields ?? originalUser.visibleFields,
-                assignedProjects: updatedData.assignedProjects ?? originalUser.assignedProjects
-              }
+              ...u,
+              name: updatedData.name ?? originalUser.name,
+              phone: updatedData.phone ?? originalUser.phone,
+              email: updatedData.email ?? originalUser.email,
+              gstNumber: updatedData.gstNumber ?? originalUser.gstNumber,
+              reraNumber: updatedData.reraNumber ?? originalUser.reraNumber,
+              visibleFields: updatedData.visibleFields ?? originalUser.visibleFields,
+              assignedProjects: updatedData.assignedProjects ?? originalUser.assignedProjects
+            }
             : u
         )
       );
+
+      window.location.reload();
+
+      
     } catch (error) {
       console.error("Error updating user:", error);
       alert("Update failed.");
     }
   };
-  
+
 
   const [deleteConfirmation, setDeleteConfirmation] = useState(null);
 
   const handleDeleteUser = async (userId) => {
     const token = localStorage.getItem("token"); // Get token from localStorage (or use cookies if stored there)
-    
+
     if (!token) {
       console.error("No authentication token found");
       return;
     }
-  
+
     try {
       const response = await fetch(`${API_BASE_URL}/api/user/delete/${userId}`, {
         method: "DELETE",
@@ -1570,7 +2123,7 @@ const toggleAssignedProject = (user, projectId) => {
           "Content-Type": "application/json",
         },
       });
-  
+
       if (response.ok) {
         setUsers(prevUsers => prevUsers.filter(user => user._id !== userId));
         setDeleteConfirmation(null);
@@ -1583,10 +2136,11 @@ const toggleAssignedProject = (user, projectId) => {
   };
   
 
-  
-  
-  
-  
+
+
+
+
+
 
 
 
@@ -1596,7 +2150,7 @@ const toggleAssignedProject = (user, projectId) => {
     switch (activeTab) {
 
 
-       
+
       case 'dashboard':
         return renderDashboardTable();
       case 'projects':
@@ -1609,29 +2163,29 @@ const toggleAssignedProject = (user, projectId) => {
             className="bg-white lg:mt-0 lg:px-20 lg:py-20 mt-32 px-4 py-8 space-y-4"
             onSubmit={async (e) => {
               e.preventDefault();
-  
+
               const formData = new FormData();
               const projectName = e.target.projectName.value;
               const file = e.target.file.files[0];
-  
+
               if (!projectName || !file) {
                 alert('Please provide a project name and select an Excel file.');
                 return;
               }
-  
+
               formData.append('projectName', projectName);
               formData.append('file', file);
-  
+
               try {
                 const response = await fetch(`${API_BASE_URL}/api/project/create`, {
                   method: 'POST',
                   body: formData,
                 });
-  
+
                 if (!response.ok) {
                   throw new Error('Failed to create project and inventory');
                 }
-  
+
                 const data = await response.json();
                 alert(data.message || 'Project and inventory created successfully!');
               } catch (error) {
@@ -1641,7 +2195,7 @@ const toggleAssignedProject = (user, projectId) => {
             }}
           >
             <h2 className="text-2xl font-bold lg:text-4xl mb-7">Create Inventory</h2>
-  
+
             <div>
               <label htmlFor="projectName" className="text-gray-700 block">
                 Project Name
@@ -1654,7 +2208,7 @@ const toggleAssignedProject = (user, projectId) => {
                 className="border-b border-b-black w-full block focus:outline-none mt-1"
               />
             </div>
-  
+
             <div>
               <label htmlFor="file" className="text-gray-700 block mb-3">
                 Upload Excel File
@@ -1671,7 +2225,7 @@ const toggleAssignedProject = (user, projectId) => {
                 Download Format Of File
               </a>
             </div>
-  
+
             <button
               type="submit"
               className="bg-gray-700 rounded-xl text-white font-semibold hover:bg-gray-900 px-4 py-2"
@@ -1681,186 +2235,210 @@ const toggleAssignedProject = (user, projectId) => {
           </form>
         );
       case 'createExecutive':
-            return (
-              <form
-                className="bg-white lg:mt-0 lg:px-20 lg:py-20 mt-32 px-4 py-8 space-y-4"
-                onSubmit={async (e) => {
-                  e.preventDefault();
-                  
+        return (
+          <form
+            className="bg-white lg:mt-0 lg:px-20 lg:py-20 mt-32 px-4 py-8 space-y-4"
+            onSubmit={async (e) => {
+              e.preventDefault();
 
-                  const form = e.target; // Reference to the form element
-                  const name = form.name.value;
-                  const phone = form.phone.value;
-                  const password = form.password.value;
-                  const assignedProjects = Array.from(form.querySelectorAll('input[name="assignedProjects"]:checked'))
-                    .map((project) => project.value);
-                  const visibleFields = Array.from(form.querySelectorAll('input[name="visibleFields"]:checked'))
-                    .map((field) => field.value);
-                  console.log('Assigned Projects:', assignedProjects);
-                  console.log('Visible Fields:', visibleFields);
-                      
 
-                  // Ensure 'status' is always included in visibleFields
-                  if (!visibleFields.includes('status')) {
-                    visibleFields.push('status');
-                  }
+              const form = e.target; // Reference to the form element
+              const name = form.name.value;
+              const phone = form.phone.value;
+              const password = form.password.value;
+              const email = form.email.value.trim();
+              const gstNumber = form.gstNumber.value.trim();
+              const reraNumber = form.reraNumber.value.trim();
+              const assignedProjects = Array.from(form.querySelectorAll('input[name="assignedProjects"]:checked'))
+                .map((project) => project.value);
+              const visibleFields = Array.from(form.querySelectorAll('input[name="visibleFields"]:checked'))
+                .map((field) => field.value);
+              console.log('Assigned Projects:', assignedProjects);
+              console.log('Visible Fields:', visibleFields);
 
-                  if (!name || !phone || !password || assignedProjects.length === 0 || visibleFields.length === 0) {
-                    alert('Please fill in all fields and select at least one project and visible field.');
-                    return;
-                  }
 
-                  const payload = {
-                    name,
-                    phone,
-                    password,
-                    role: 'executive',
-                    assignedProjects,
-                    visibleFields,
-                  };
+              // Ensure 'status' is always included in visibleFields
+              if (!visibleFields.includes('status')) {
+                visibleFields.push('status');
+              }
 
-                  try {
-                    const response = await fetch(`${API_BASE_URL}/api/user/register`, {
-                      method: 'POST',
-                      headers: {
-                        'Content-Type': 'application/json',
-                      },
-                      body: JSON.stringify(payload),
-                    });
+              if (!name || !phone || !password || assignedProjects.length === 0 || visibleFields.length === 0) {
+                alert('Please fill in all fields and select at least one project and visible field.');
+                return;
+              }
 
-                    if (!response.ok) {
-                      throw new Error('Failed to register executive');
-                    }
+              const payload = {
+                name,
+                phone,
+                password,
+                role: 'executive',
+                assignedProjects,
+                visibleFields,
+                ...(email && { email }), // Only include if provided
+                ...(gstNumber && { gstNumber }),
+                ...(reraNumber && { reraNumber }),
+              };
 
-                    const data = await response.json();
-                    alert(data.message || 'Executive registered successfully!');
-                    
-                    // Reset the form fields after successful registration
-                    form.reset();
-                  } catch (error) {
-                    console.error('Error:', error);
-                    alert('Failed to register executive');
-                  }
-                }}
+              try {
+                const response = await fetch(`${API_BASE_URL}/api/user/register`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify(payload),
+                });
+
+                if (!response.ok) {
+                  throw new Error('Failed to register executive');
+                }
+
+                const data = await response.json();
+                alert(data.message || 'Executive registered successfully!');
+
+                // Reset the form fields after successful registration
+                form.reset();
+              } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to register executive');
+              }
+            }}
+          >
+            <h2 className="text-2xl font-bold lg:text-4xl mb-7">Register CP</h2>
+
+            <div>
+              <label htmlFor="name" className="text-gray-700 block">
+                CP Name
+              </label>
+              <input
+                type="text"
+                id="name"
+                name="name"
+                required
+                className="border-b border-b-black w-full block focus:outline-none mt-1"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="phone" className="text-gray-700 block">
+                Phone Number
+              </label>
+              <input
+                type="text"
+                id="phone"
+                name="phone"
+                required
+                className="border-b border-b-black w-full block focus:outline-none mt-1"
+              />
+            </div>
+            <div>
+    <label htmlFor="gstNumber" className="text-gray-700 block">GST Number (Optional)</label>
+    <input type="text" id="gstNumber" name="gstNumber" className="border-b border-b-black w-full block focus:outline-none mt-1" />
+  </div>
+
+  <div>
+    <label htmlFor="reraNumber" className="text-gray-700 block">RERA Number (Optional)</label>
+    <input type="text" id="reraNumber" name="reraNumber" className="border-b border-b-black w-full block focus:outline-none mt-1" />
+  </div>
+            <div>
+            <label htmlFor="email" className="text-gray-700 block">Email (Optional)</label>
+            <input type="email" id="email" name="email" className="border-b border-b-black w-full block focus:outline-none mt-1" />
+          </div>
+
+
+            <div className='relative'>
+              <label htmlFor="password" className="text-gray-700 block">
+                Password
+              </label>
+              <input
+                type={showPassword ? "text" : "password"}
+                id="password"
+                name="password"
+                required
+                className="border-b border-b-black w-full block focus:outline-none mt-1"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="text-gray-600 absolute right-4 top-7"
               >
-                <h2 className="text-2xl font-bold lg:text-4xl mb-7">Register CP</h2>
+                {showPassword ? <FaEyeSlash /> : <FaEye />}
+              </button>
+            </div>
 
-                <div>
-                  <label htmlFor="name" className="text-gray-700 block">
-                    CP Name
-                  </label>
-                  <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    required
-                    className="border-b border-b-black w-full block focus:outline-none mt-1"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="phone" className="text-gray-700 block">
-                    Phone Number
-                  </label>
-                  <input
-                    type="text"
-                    id="phone"
-                    name="phone"
-                    required
-                    className="border-b border-b-black w-full block focus:outline-none mt-1"
-                  />
-                </div>
-
-                <div className='relative'>
-                  <label htmlFor="password" className="text-gray-700 block">
-                    Password
-                  </label>
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    id="password"
-                    name="password"
-                    required
-                    className="border-b border-b-black w-full block focus:outline-none mt-1"
-                  />
-                  <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="text-gray-600 absolute right-4 top-7"
-                  >
-                    {showPassword ? <FaEyeSlash /> : <FaEye />}
-                  </button>
-                </div>
-
-                <div>
-                  <label className="text-3xl text-gray-700 block font-semibold mb-3">Assign Projects</label>
-                  <div className="flex flex-wrap">
-                    {projectInventories.map((project) => (
-                      <div key={project.projectId} className="flex w-1/3 items-center">
-                        <input
-                          type="checkbox"
-                          id={project.projectId}
-                          name="assignedProjects"
-                          value={project.projectId}
-                          className="mr-2"
-                        />
-                        <label htmlFor={project.projectId} className="text-gray-700">
-                          {project.projectName}
-                        </label>
-                      </div>
-                    ))}
+            <div>
+              <label className="text-3xl text-gray-700 block font-semibold mb-3">Assign Projects</label>
+              <div className="flex flex-wrap">
+                {projectInventories.map((project) => (
+                  <div key={project.projectId} className="flex w-1/3 items-center">
+                    <input
+                      type="checkbox"
+                      id={project.projectId}
+                      name="assignedProjects"
+                      value={project.projectId}
+                      className="mr-2"
+                    />
+                    <label htmlFor={project.projectId} className="text-gray-700">
+                      {project.projectName}
+                    </label>
                   </div>
-                </div>
+                ))}
+              </div>
+            </div>
 
 
-                <div>
-                  <label className="text-3xl text-gray-700 block font-semibold mb-3">Visible Fields</label>
-                  <div className="flex flex-wrap">
-                  {Object.entries(fieldLabelMap).map(([backendField, displayLabel]) => (
-                    <div key={backendField} className="flex w-1/3 items-center">
-                      <input
-                        type="checkbox"
-                        id={backendField}
-                        name="visibleFields"
-                        value={backendField}
-                        className="mr-2"
-                      />
-                      <label htmlFor={backendField} className="text-gray-700">
-                        {displayLabel}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-                </div>
+            <div>
+              <label className="text-3xl text-gray-700 block font-semibold mb-3">Visible Fields</label>
+              <div className="flex flex-wrap">
+                {Object.entries(fieldLabelMap).map(([backendField, displayLabel]) => (
+                  <div key={backendField} className="flex w-1/3 items-center">
+                    <input
+                      type="checkbox"
+                      id={backendField}
+                      name="visibleFields"
+                      value={backendField}
+                      className="mr-2"
+                    />
+                    <label htmlFor={backendField} className="text-gray-700">
+                      {displayLabel}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
 
-                <button
-                  type="submit"
-                  className="bg-gray-700 rounded-xl text-white font-semibold hover:bg-gray-900 px-4 py-2"
-                >
-                  SUBMIT
-                </button>
-              </form>
-            );
-      case 'profile' :
-        return renderProfileUpdate(); 
+            <button
+              type="submit"
+              className="bg-gray-700 rounded-xl text-white font-semibold hover:bg-gray-900 px-4 py-2"
+            >
+              SUBMIT
+            </button>
+          </form>
+        );
+      case 'profile':
+        return renderProfileUpdate();
       case 'users':
-          return (
-            <div className="bg-white p-6 lg:p-12 rounded-xl shadow-lg">
-              <h2 className="text-3xl font-bold mb-6">User Management</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        return (
+          <div className="bg-white p-6 lg:p-12 rounded-xl shadow-lg">
+            <h2 className="text-3xl font-bold mb-6">User Management</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {Array.isArray(users) && users.length > 0 ? (
-               users.filter(user => user.role === "executive").map(user => (
-                    <div key={user._id} className="p-4 border rounded-lg shadow relative bg-gray-50">
-                      {/* Edit Icon */}
-                      <div className="absolute top-3 right-3 flex space-x-3">
+                users.filter(user => user.role === "executive").map(user => (
+                  <div key={user._id} className="p-4 border rounded-lg shadow relative bg-gray-50">
+                    {/* Edit Icon */}
+                    <div className="absolute top-3 right-3 flex space-x-3">
                       <button
                         onClick={() => {
-                          setEditingUser(user._id);
-                          setEditableData(prev => ({
+                          setEditingUser(prev => prev === user._id ? null : user._id);
+                          setEditableData((prev) => ({
                             ...prev,
                             [user._id]: prev[user._id] || {
-                              name: user.name,
-                              phone: user.phone,
-                              visibleFields: new Set(user.visibleFields || [])
+                              name: user.name ?? "",  // Ensure string fallback
+                              phone: user.phone ?? "",
+                              email: user.email ?? "",
+                              gstNumber: user.gstNumber ?? "",
+                              reraNumber: user.reraNumber ?? "",
+                              visibleFields: new Set(user.visibleFields || []),
+                              assignedProjects: [...(user.assignedProjects || [])]
                             }
                           }));
                         }}
@@ -1869,136 +2447,180 @@ const toggleAssignedProject = (user, projectId) => {
                         <FaPen />
                       </button>
                       <button
-                      onClick={() => setDeleteConfirmation(user._id)}
-                      className="text-red-600  hover:text-red-900"
-                    >
-                      <FaTrash />
-                    </button>
-        </div>
-        {deleteConfirmation === user._id && (
-        <div className="absolute top-10 right-3 z-50 bg-white shadow-lg p-3 rounded-md border">
-          <p className="text-sm">Are you sure you want to delete this user? It will delete all its history including its broker details but all its previous sold properties will remain sold.</p>
-          <div className="flex space-x-2 mt-2">
-            <button 
-              onClick={() => handleDeleteUser(user._id)} 
-              className="bg-red-600 text-white px-3 py-1 rounded-md text-sm hover:bg-red-800"
-            >
-              Yes
-            </button>
-            <button 
-              onClick={() => setDeleteConfirmation(null)} 
-              className="bg-gray-300 px-3 py-1 rounded-md text-sm hover:bg-gray-400"
-            >
-              No
-            </button>
-          </div>
-        </div>
-      )}
-
-        
-                      <div className="mb-2">
-                        <label className="text-gray-700 block">Name</label>
-                        <input
-                          type="text"
-                          value={user._id === editingUser ? editableData[user._id]?.name || "" : user.name}
-                          disabled={user._id !== editingUser}
-                          onChange={(e) => handleEditChange(user._id, 'name', e.target.value)}
-                          className={`border-b w-full bg-transparent ${user._id === editingUser ? 'border-black' : 'border-gray-300'}`}
-                        />
-                      </div>
-        
-                      <div className="mb-2">
-                        <label className="text-gray-700 block">Phone</label>
-                        <input
-                          type="text"
-                          value={user._id === editingUser ? editableData[user._id]?.phone || "" : user.phone}
-                          disabled={user._id !== editingUser}
-                          onChange={(e) => handleEditChange(user._id, 'phone', e.target.value)}
-                          className={`border-b w-full bg-transparent ${user._id === editingUser ? 'border-black' : 'border-gray-300'}`}
-                        />
-                      </div>
-                      {user._id === editingUser && (
-                      <div className="mb-2">
-                        <label className="text-gray-700 block">New Password</label>
-                        <input
-                          type="password"
-                          placeholder="Enter new password"
-                          value={editableData[user._id]?.password || ""}
-                          onChange={(e) => handleEditChange(user._id, 'password', e.target.value)}
-                          className="border-b w-full bg-transparent border-black"
-                        />
+                        onClick={() => setDeleteConfirmation(user._id)}
+                        className="text-red-600  hover:text-red-900"
+                      >
+                        <FaTrash />
+                      </button>
+                    </div>
+                    {deleteConfirmation === user._id && (
+                      <div className="absolute top-10 right-3 z-50 bg-white shadow-lg p-3 rounded-md border">
+                        <p className="text-sm">Are you sure you want to delete this user? It will delete all its history including its broker details but all its previous sold properties will remain sold.</p>
+                        <div className="flex space-x-2 mt-2">
+                          <button
+                            onClick={() => handleDeleteUser(user._id)}
+                            className="bg-red-600 text-white px-3 py-1 rounded-md text-sm hover:bg-red-800"
+                          >
+                            Yes
+                          </button>
+                          <button
+                            onClick={() => setDeleteConfirmation(null)}
+                            className="bg-gray-300 px-3 py-1 rounded-md text-sm hover:bg-gray-400"
+                          >
+                            No
+                          </button>
+                        </div>
                       </div>
                     )}
 
-        
-                      <div className="mb-2">
-                        <label className="text-gray-700 block">Role</label>
-                        <span className="text-lg font-semibold">{user.role === "executive" ? "CP" : "" }</span>
-                      </div>
-                      {/* Assigned Projects Dropdown */}
-                      {/* Assigned Projects Checkbox */}
-<div className="mb-4">
-  <label className="text-gray-700 font-semibold">Assigned Projects</label>
-  <div className="flex flex-wrap gap-2 mt-2">
-    {projectInventories.map((project) => (
-      <label key={project.projectId} className="flex items-center space-x-2">
-        <input
-  type="checkbox"
-  disabled={user._id !== editingUser}
-  checked={editableData[user._id]?.assignedProjects?.includes(project.projectId) ?? user.assignedProjects.includes(project.projectId)}
-  onChange={() => toggleAssignedProject(user, project.projectId)}
-  className="accent-gray-700"
-/>
 
-        <span>{project.projectName}</span>
-      </label>
-    ))}
-  </div>
+                    <div className="mb-2">
+                      <label className="text-gray-700 block">Name</label>
+                      <input
+                        type="text"
+                        value={editingUser === user._id ? editableData[user._id]?.name ?? user.name ?? "" : user.name ?? ""}
+                        disabled={user._id !== editingUser}
+                        onChange={(e) => handleEditChange(user._id, 'name', e.target.value)}
+                        className={`border-b w-full bg-transparent ${user._id === editingUser ? 'border-black' : 'border-gray-300'}`}
+                      />
+                    </div>
+
+                    <div className="mb-2">
+                      <label className="text-gray-700 block">Phone</label>
+                      <input
+                        type="text"
+                        value={editingUser === user._id ? editableData[user._id]?.phone ?? user.phone ?? "" : user.phone ?? ""}
+                        disabled={user._id !== editingUser}
+                        onChange={(e) => handleEditChange(user._id, 'phone', e.target.value)}
+                        className={`border-b w-full bg-transparent ${user._id === editingUser ? 'border-black' : 'border-gray-300'}`}
+                      />
+                    </div>
+                    {/* Email */}
+<div className="mb-2">
+  <label className="text-gray-700 block">Email</label>
+  <input
+    type="email"
+    value={editingUser === user._id ? editableData[user._id]?.email ?? user.email ?? "" : user.email ?? ""}
+    disabled={user._id !== editingUser}
+    onChange={(e) => handleEditChange(user._id, "email", e.target.value)}
+    className={`border-b w-full bg-transparent ${user._id === editingUser ? "border-black" : "border-gray-300"}`}
+  />
 </div>
 
+{/* GST Number */}
+<div className="mb-2">
+  <label className="text-gray-700 block">GST Number</label>
+  <input
+    type="text"
+    value={editingUser === user._id ? editableData[user._id]?.gstNumber ?? user.gstNumber ?? "" : user.gstNumber ?? ""}
 
-        
-                      {/* Visible Fields Checkbox */}
-                      <div className="mb-4">
-                        <label className="text-gray-700 font-semibold">Visible Fields</label>
-                        <div className="flex flex-wrap gap-2 mt-2">
-                          {Object.entries(fieldLabelMap).map(([field, label]) => (
-                            <label key={field} className="flex items-center space-x-2">
-                              <input
-                                type="checkbox"
-                                disabled={user._id !== editingUser}
-                                checked={editableData[user._id]?.visibleFields?.has(field) ?? user.visibleFields?.includes(field)}
-                                onChange={() => toggleVisibleField(user._id, field)}
-                                className="accent-gray-700"
-                              />
-                              <span>{label}</span>
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-        
-                      {/* Save Button */}
-                      {user._id === editingUser && (
+    disabled={user._id !== editingUser}
+    onChange={(e) => handleEditChange(user._id, "gstNumber", e.target.value)}
+    className={`border-b w-full bg-transparent ${user._id === editingUser ? "border-black" : "border-gray-300"}`}
+  />
+</div>
+
+{/* RERA Number */}
+<div className="mb-2">
+  <label className="text-gray-700 block">RERA Number</label>
+  <input
+    type="text"
+    value={editingUser === user._id ? editableData[user._id]?.reraNumber ?? user.reraNumber ?? "" : user.reraNumber ?? ""}
+    disabled={user._id !== editingUser}
+    onChange={(e) => handleEditChange(user._id, "reraNumber", e.target.value)}
+    className={`border-b w-full bg-transparent ${user._id === editingUser ? "border-black" : "border-gray-300"}`}
+  />
+</div>
+
+                    {user._id === editingUser && (
+                      <div className="mb-2 relative">
+                        <label className="text-gray-700 block">New Password</label>
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Enter new password"
+                          value={user._id === editingUser ? (editableData[user._id]?.password ?? "") : ""}
+                          onChange={(e) => handleEditChange(user._id, 'password', e.target.value)}
+                          className="border-b w-full bg-transparent border-black"
+                        />
                         <button
-                          onClick={() => saveUserChanges(user._id)}
-                          className="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-900"
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="text-gray-600 absolute right-4 top-7"
                         >
-                          Save Changes
+                          {showPassword ? <FaEyeSlash /> : <FaEye />}
                         </button>
-                      )}
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-center text-gray-600">No users found</p>
-                )}
-              </div>
-            </div>
-          );
-        
-      case 'broker':
-         return <BrokerDetails/>;
+                      </div>
+                    )}
 
-        
+
+                    <div className="mb-2">
+                      <label className="text-gray-700 block">Role</label>
+                      <span className="text-lg font-semibold">{user.role === "executive" ? "CP" : ""}</span>
+                    </div>
+                    {/* Assigned Projects Dropdown */}
+                    {/* Assigned Projects Checkbox */}
+                    <div className="mb-4">
+                      <label className="text-gray-700 font-semibold">Assigned Projects</label>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {projectInventories.map((project) => (
+                          <label key={project.projectId} className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              disabled={user._id !== editingUser}
+                              checked={editableData[user._id]?.assignedProjects?.includes(project.projectId) ?? user.assignedProjects.includes(project.projectId)}
+                              onChange={() => toggleAssignedProject(user, project.projectId)}
+                              className="accent-gray-700"
+                            />
+
+                            <span>{project.projectName}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+
+
+                    {/* Visible Fields Checkbox */}
+                    <div className="mb-4">
+                      <label className="text-gray-700 font-semibold">Visible Fields</label>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {Object.entries(fieldLabelMap).map(([field, label]) => (
+                          <label key={field} className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              disabled={user._id !== editingUser}
+                              checked={editableData[user._id]?.visibleFields?.has(field) ?? user.visibleFields?.includes(field)}
+                              onChange={() => toggleVisibleField(user._id, field)}
+                              className="accent-gray-700"
+                            />
+                            <span>{label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Save Button */}
+                    {user._id === editingUser && (
+                      <button
+                        onClick={() => saveUserChanges(user._id)}
+                        className="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-900"
+                      >
+                        Save Changes
+                      </button>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <p className="text-center text-gray-600">No users found</p>
+              )}
+            </div>
+          </div>
+        );
+
+      case 'broker':
+        return <BrokerDetails />;
+
+
       default:
         return <p>Invalid tab selected.</p>;
     }
@@ -2046,69 +2668,70 @@ const toggleAssignedProject = (user, projectId) => {
           {/* Sidebar Content */}
           {isSidebarOpen && (
             <ul className="mt-4 px-4 space-y-2">
+              <a href='/linkpage'>
+                <li
+                  className={`text-gray-600 flex flex-row items-center justify-between hover:bg-gray-300 px-2 py-2 rounded cursor-pointer `}
+                >
+                  <p>Home</p><FaHome />
+                </li>
+              </a>
               <li
                 onClick={() => setActiveTab('dashboard')}
                 className={`text-gray-600 flex flex-row items-center justify-between hover:bg-gray-300 px-2 py-2 rounded cursor-pointer ${activeTab === 'dashboard' ? 'bg-gray-300' : ''}`}
               >
-                <p>Dashboard</p><BiSolidDashboard/>
+                <p>Dashboard</p><BiSolidDashboard />
               </li>
               <li
                 onClick={() => setActiveTab('projects')}
                 className={`text-gray-600 flex flex-row items-center justify-between hover:bg-gray-300 px-2 py-2 rounded cursor-pointer ${activeTab === 'projects' ? 'bg-gray-300' : ''}`}
               >
-                Projects<IoFolderSharp/>
+                Projects<IoFolderSharp />
               </li>
               <li
                 onClick={() => setActiveTab('requests')}
                 className={`text-gray-600 flex flex-row items-center justify-between hover:bg-gray-300 px-2 py-2 rounded cursor-pointer ${activeTab === 'requests' ? 'bg-gray-300' : ''}`}
               >
-                
-                  <p>Selling Requests</p>
-                  {/* {hasPendingRequests && (
+
+                <p>Requests/Payment</p>
+                {/* {hasPendingRequests && (
                     <div className="bg-green-500 h-2.5 rounded-full w-2.5"></div> // Green dot
                   )} */}
-                  <BiMessageRoundedDots 
-                    className={` ${hasPendingRequests ? 'text-green-500' : 'text-gray-500'}`} 
-                  />
+                <BiMessageRoundedDots
+                  className={` ${hasPendingRequests ? 'text-green-500' : 'text-gray-500'}`}
+                />
               </li>
               <li
                 onClick={() => setActiveTab('createInventory')}
                 className={`text-gray-600 flex flex-row items-center justify-between hover:bg-gray-300 px-2 py-2 rounded cursor-pointer ${activeTab === 'createInventory' ? 'bg-gray-300' : ''}`}
               >
-                Create Inventory<IoIosCreate/>
+                Create Inventory<IoIosCreate />
               </li>
               <li
                 onClick={() => setActiveTab('createExecutive')}
                 className={`text-gray-600 flex flex-row items-center justify-between hover:bg-gray-300 px-2 py-2 rounded cursor-pointer ${activeTab === 'createExecutive' ? 'bg-gray-300' : ''}`}
               >
-                Create CP<IoIosCreate/>
+                Create CP<IoIosCreate />
               </li>
               <li
                 onClick={() => setActiveTab('users')}
                 className={`text-gray-600 flex flex-row items-center justify-between hover:bg-gray-300 px-2 py-2 rounded cursor-pointer ${activeTab === 'users' ? 'bg-gray-300' : ''}`}
               >
-                Edit Users<CiEdit/>
+                Edit Users<CiEdit />
               </li>
               <li
                 onClick={() => setActiveTab('broker')}
                 className={`text-gray-600 flex flex-row items-center justify-between hover:bg-gray-300 px-2 py-2 rounded cursor-pointer ${activeTab === 'broker' ? 'bg-gray-300' : ''}`}
               >
-                Broker Details<CiEdit/>
+                Broker Details<CiEdit />
               </li>
-              <a href='/linkpage'>
-              <li
-                className={`text-gray-600 flex flex-row items-center justify-between hover:bg-gray-300 px-2 py-2 rounded cursor-pointer `}
-              >
-                <p>Home</p><FaHome/>
-              </li>
-              </a>
+              
             </ul>
           )}
         </div>
 
         {/* Main Content */}
         <div
-          className={`flex-grow overflow-y-scroll bg-[#FFFDD0] transition-all duration-300 ${isSidebarOpen ? 'lg:pl-8' : 'px-6 lg:px-0 lg:pl-16'}`}
+          className={`flex-grow overflow-y-scroll bg-[#FAD99D] transition-all duration-300 ${isSidebarOpen ? 'lg:pl-8' : 'px-6 lg:px-0 lg:pl-16'}`}
         >
           <div className="p-4">{renderContent()}</div>
         </div>

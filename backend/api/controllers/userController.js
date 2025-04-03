@@ -52,7 +52,7 @@ export const getAllUsers = async (req, res) => {
     // Ensure only admins can fetch all users
 
     // Fetch all users with selected fields
-    const users = await ROFUser.find().select("name phone role assignedProjects visibleFields");
+    const users = await ROFUser.find().select("name phone email reraNumber gstNumber  role assignedProjects visibleFields");
 
     return res.status(200).json({ users });
   } catch (error) {
@@ -65,7 +65,7 @@ export const getAllUsers = async (req, res) => {
 
 export const registerUser = async (req, res) => {
   try {
-    const { name, phone, password, role, assignedProjects, visibleFields } = req.body;
+    const { name, phone, password, role, assignedProjects, visibleFields, email, gstNumber, reraNumber  } = req.body;
 
     // Check for missing fields
     if (!name || !phone || !password || !role) {
@@ -90,6 +90,9 @@ export const registerUser = async (req, res) => {
     const newUser = new ROFUser({
       name,
       phone,
+      email: email || undefined, // Only store if provided
+      gstNumber: gstNumber || undefined,
+      reraNumber: reraNumber || undefined,
       password: hashedPassword,
       role,
       assignedProjects: role === "executive" ? assignedProjects || [] : [], // Assign projects only if role is executive
@@ -187,7 +190,7 @@ export const getUser = async (req, res) => {
   try {
     const userId = req.user.id; // Assuming user ID is passed in the request via JWT middleware
 
-    const user = await ROFUser.findById(userId).select("name phone role assignedProjects visibleFields");
+    const user = await ROFUser.findById(userId).select("name phone email reraNumber gstNumber role assignedProjects visibleFields");
 
     if (!user) {
       return res.status(404).json({ message: "User not found." });
@@ -271,7 +274,7 @@ export const updateUserByAdmin = async (req, res) => {
     console.log("Request body:", JSON.stringify(req.body, null, 2));
 
     const { userId } = req.params;
-    const { name, phone, password, role, assignedProjects, visibleFields } = req.body;
+    const { name, phone, password, role, assignedProjects, visibleFields, email, gstNumber, reraNumber  } = req.body;
 
     // Debug what was received
     console.log(`VisibleFields received:`, visibleFields);
@@ -287,6 +290,9 @@ export const updateUserByAdmin = async (req, res) => {
 
     if (name) user.name = name;
     if (phone) user.phone = phone;
+    if (email !== undefined) user.email = email;
+    if (gstNumber !== undefined) user.gstNumber = gstNumber;
+    if (reraNumber !== undefined) user.reraNumber = reraNumber;
     if (password) user.password = await bcrypt.hash(password, 10);
     if (role) user.role = role;
 

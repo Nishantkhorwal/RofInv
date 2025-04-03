@@ -12,6 +12,7 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { expireOldSaleRequests } from './controllers/projectController.js';
 import cron from 'node-cron';
+import SaleRequest from './models/saleRequestModel.js';
 
 // import Inventory from './models/inventoryModel.js';
 // import Project from './models/projectModel.js';
@@ -81,6 +82,46 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}!`);
 });
+
+// const migrate = async () => {
+//   try {
+//     await mongoose.connect(process.env.MONGO, {
+//       useNewUrlParser: true,
+//       useUnifiedTopology: true,
+//     });
+
+//     // Step 1: Find and fix documents where paymentDetails is an object
+//     const wrongFormatDocs = await SaleRequest.find({
+//       paymentDetails: { $type: "object" }, // Find documents where paymentDetails is an object
+//     });
+
+//     console.log(`🔍 Found ${wrongFormatDocs.length} documents with incorrect format.`);
+
+//     if (wrongFormatDocs.length > 0) {
+//       for (const doc of wrongFormatDocs) {
+//         await SaleRequest.updateOne(
+//           { _id: doc._id },
+//           { $set: { paymentDetails: [doc.paymentDetails] } } // Convert object to array
+//         );
+//       }
+//       console.log("✅ Fixed incorrect paymentDetails format.");
+//     }
+
+//     // Step 2: Add `isChequeCleared: false` to all elements inside paymentDetails array
+//     const result = await SaleRequest.updateMany(
+//       { "paymentDetails.isChequeCleared": { $exists: false } },
+//       { $set: { "paymentDetails.$[].isChequeCleared": false } } // Only works if paymentDetails is an array
+//     );
+
+//     console.log(`✅ Migration successful: ${result.modifiedCount} documents updated.`);
+//     mongoose.connection.close();
+//   } catch (error) {
+//     console.error("❌ Migration failed:", error);
+//     mongoose.connection.close();
+//   }
+// };
+
+// migrate();
 
 export { io };
 

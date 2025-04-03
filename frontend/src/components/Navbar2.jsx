@@ -81,6 +81,11 @@ function Navbar() {
                   {/* Dropdown Content */}
                   {dropdown && (
                     <ul className="bg-white rounded-md shadow-md text-black w-48 absolute mt-2 py-2">
+                      <a target='_blank' href='https://drive.google.com/drive/u/1/folders/16K_rrsCEjQMWA39Xa2HiQhFpwRrVZxZh'>
+                    <li className="cursor-pointer hover:bg-gray-100 px-4 py-2" >
+                      Creatives
+                    </li>
+                    </a>
                       <a href='images2/SitePlan4.jpg' download>
                         <li className="cursor-pointer hover:bg-gray-100 px-4 py-2" >
                           Site Plan
@@ -89,6 +94,11 @@ function Navbar() {
                       <a href='images2/locationMap2.jpg' download>
                         <li className="cursor-pointer hover:bg-gray-100 px-4 py-2" >
                           Location Map
+                        </li>
+                      </a>
+                      <a href='images2/amenitiesSukoon.jpeg' download>
+                        <li className="cursor-pointer hover:bg-gray-100 px-4 py-2" >
+                          Amenities
                         </li>
                       </a>
                     </ul>
@@ -128,6 +138,11 @@ function Navbar() {
                   {/* Dropdown Content */}
                   {dropdown && (
                     <ul className="bg-white rounded-md shadow-md text-black w-48 absolute mt-2 py-2">
+                      <a target='_blank' href='https://drive.google.com/drive/u/1/folders/16K_rrsCEjQMWA39Xa2HiQhFpwRrVZxZh'>
+                    <li className="cursor-pointer hover:bg-gray-100 px-4 py-2" >
+                      Creatives
+                    </li>
+                    </a>
                       <a href='images2/SitePlan4.jpg' download>
                         <li className="cursor-pointer hover:bg-gray-100 px-4 py-2" >
                           Site Plan
@@ -138,6 +153,12 @@ function Navbar() {
                           Location Map
                         </li>
                       </a>
+                      <a href='images2/amenitiesSukoon.jpeg' download>
+                        <li className="cursor-pointer hover:bg-gray-100 px-4 py-2" >
+                          Amenities
+                        </li>
+                      </a>
+                      
                     </ul>
                   )}
                 </div>

@@ -20,6 +20,11 @@ const saleRequestSchema = new mongoose.Schema({
     ref: 'ROFUser',
     required: true,
   },
+  mainBroker: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'ROFUser', // Assuming brokers are also stored in ROFUser model
+    default: null,  // Default to null if no broker is assigned
+  },
   createdAt: {
     type: Date,
     default: Date.now,
@@ -51,12 +56,15 @@ const saleRequestSchema = new mongoose.Schema({
     unitCost: { type: Number },
     otherCharges: { type: Number },
   },
-  paymentDetails: {
-    chequeNumber: { type: String },
-    date: { type: Date },
-    amount: { type: Number },
-    bankName: { type: String },
-  },
+  paymentDetails: [
+    {
+      chequeNumber: { type: String },
+      date: { type: Date },
+      amount: { type: Number },
+      bankName: { type: String },
+      isChequeCleared: { type: Boolean, default: false }, 
+    }
+  ]
 });
 
 const SaleRequest = mongoose.model('SaleRequest', saleRequestSchema);

@@ -1,5 +1,5 @@
 import express from 'express';
-import { createProjectWithInventory, getInventoryForProject , holdInventoryItem, getAllProjectInventories, getSaleRequests, handleSaleRequest, updateInventoryStatusWithRequestHandling, editSaleRequestCustomerDetails } from '../controllers/projectController.js';
+import { createProjectWithInventory, getInventoryForProject , holdInventoryItem, getAllProjectInventories, getSaleRequests, handleSaleRequest, updateInventoryStatusWithRequestHandling, editSaleRequestCustomerDetails, downloadApprovedRequests, updatePaymentDetails, updatePayment, downloadPaymentDetails, deletePayment  } from '../controllers/projectController.js';
 import upload from '../multerConfig.js';
 import { io } from '../index.js';
 import authenticateUser from '../middleware/authenticateUser.js';
@@ -20,9 +20,23 @@ router.put('/requests/:requestId',(req, res) => handleSaleRequest(req, res, io))
 // Get all pending sale requests
 router.get('/request',authenticateUser, getSaleRequests);
 router.post('/create', upload.single('file'), createProjectWithInventory);
-router.put('/inventory/:inventoryId/update-status', (req, res) => updateInventoryStatusWithRequestHandling(req, res, io));
+router.put('/inventory/:inventoryId/update-status', 
+  authenticateUser, 
+  upload.fields([
+    { name: 'panCardImage', maxCount: 1 },
+    { name: 'chequeImage', maxCount: 1 }
+  ]), 
+  (req, res) => updateInventoryStatusWithRequestHandling(req, res, io)
+);
+
 
 router.put('/requests/:requestId/edit-customer', authenticateUser, editSaleRequestCustomerDetails);
+router.get('/requests/approved/download', authenticateUser, downloadApprovedRequests);
+router.get('/requests/:saleRequestId/payment/download', authenticateUser, downloadPaymentDetails);
+router.put("/requests/:requestId/payment",authenticateUser,updatePaymentDetails);
+router.put('/:requestId/payments/:paymentId', authenticateUser,updatePayment);
+router.delete('/requests/:requestId/deletepayments/:paymentId', authenticateUser, deletePayment);
+
 
 
 

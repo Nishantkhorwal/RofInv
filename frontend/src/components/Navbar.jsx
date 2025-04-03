@@ -81,7 +81,12 @@ function Navbar() {
                 {/* Dropdown Content */}
                 {dropdown && (
                   <ul className="bg-white rounded-md shadow-md text-black w-48 absolute mt-2 py-2">
-                    <a href='images2/club1.jpeg' download>
+                    <a target='_blank' href='https://drive.google.com/drive/u/1/folders/16K_rrsCEjQMWA39Xa2HiQhFpwRrVZxZh'>
+                    <li className="cursor-pointer hover:bg-gray-100 px-4 py-2" >
+                      Creatives
+                    </li>
+                    </a>
+                    <a href='images2/sitemapPravasa.jpg' download>
                     <li className="cursor-pointer hover:bg-gray-100 px-4 py-2" >
                       Site Plan
                     </li>
@@ -91,6 +96,11 @@ function Navbar() {
                       Location Map
                     </li>
                     </a>
+                    <a href='amenities.jpg' download>
+                        <li className="cursor-pointer hover:bg-gray-100 px-4 py-2" >
+                          Amenities
+                        </li>
+                      </a>
                   </ul>
                 )}
               </div>
@@ -128,7 +138,12 @@ function Navbar() {
                 {/* Dropdown Content */}
                 {dropdown && (
                   <ul className="bg-white rounded-md shadow-md text-black w-48 absolute mt-2 py-2">
-                    <a href='images2/club1.jpeg' download>
+                    <a target='_blank' href='https://drive.google.com/drive/u/1/folders/16K_rrsCEjQMWA39Xa2HiQhFpwRrVZxZh'>
+                    <li className="cursor-pointer hover:bg-gray-100 px-4 py-2" >
+                      Creatives
+                    </li>
+                    </a>
+                    <a href='images2/sitemapPravasa.jpg' download>
                     <li className="cursor-pointer hover:bg-gray-100 px-4 py-2" >
                       Site Plan
                     </li>
@@ -138,6 +153,11 @@ function Navbar() {
                       Location Map
                     </li>
                     </a>
+                    <a href='amenities.jpg' download>
+                        <li className="cursor-pointer hover:bg-gray-100 px-4 py-2" >
+                          Amenities
+                        </li>
+                      </a>
                   </ul>
                 )}
               </div>
@@ -148,7 +168,7 @@ function Navbar() {
 
           {/* Buttons at the bottom of the header */}
           <div className="flex flex-row justify-end w-full absolute bottom-10 px-20 space-x-6 transform">
-           <a href="/Brochure.pdf" download >
+           <a href="/Brochure2.pdf" download >
             <button className="flex bg-white shadow-md font-normal items-center px-10 py-2">
               <span className="text-sm font-semibold poppins">Download Brochure</span>
             </button>
