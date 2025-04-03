@@ -12,7 +12,6 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { expireOldSaleRequests } from './controllers/projectController.js';
 import cron from 'node-cron';
-import SaleRequest from './models/saleRequestModel.js';
 
 // import Inventory from './models/inventoryModel.js';
 // import Project from './models/projectModel.js';
