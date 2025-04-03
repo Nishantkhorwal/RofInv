@@ -115,7 +115,7 @@ function Navbar() {
           {/* Sliding Menu */}
           <div className={`fixed top-0 right-0 h-screen w-3/4 bg-white z-50 transform ${menuOpen ? 'translate-x-0' : 'translate-x-full'} transition-transform duration-300 ease-in-out`}>
             <RxCross2 onClick={toggleMenu} className='text-lg absolute  right-4 top-4' />
-            <ul className="flex flex-col p-6 text-black lg:space-y-4">
+            <ul className="flex flex-col p-6 text-black lg:space-y-10">
               <a href='/linkpage'><li className='cursor-pointer'>Home</li></a>
               <a href='#about'><li className='cursor-pointer'>About</li></a>
 
