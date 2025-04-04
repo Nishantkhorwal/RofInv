@@ -137,7 +137,11 @@ const SaleForm = ({ inventory, closeForm, userId }) => {
         if (chequeImage) formDataToSubmit.append('chequeImage', chequeImage);
 
         formDataToSubmit.append('createdBy', userId);
-        formDataToSubmit.append('mainBroker', mainBroker || '');
+        if (mainBroker) {
+            formDataToSubmit.append('mainBroker', mainBroker);
+        }
+        
+
 
         try {
             const response = await fetch(`${API_BASE_URL}/api/project/inventory/${inventory._id}/update-status`, {
