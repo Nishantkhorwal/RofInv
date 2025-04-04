@@ -1439,7 +1439,6 @@ const [chequeStatusFilter, setChequeStatusFilter] = useState('all'); // 'all', '
                       <th className="px-4 py-2">Actual Area</th>
                       <th className="px-1 py-2">Saleable Area</th>
                       <th className="px-4 py-2">PLC</th>
-                      <th className="px-4 py-2">PLC Charges</th>
 
                     </tr>
                   </thead>
@@ -1478,7 +1477,6 @@ const [chequeStatusFilter, setChequeStatusFilter] = useState('all'); // 'all', '
                         <td className="px-4 py-2">{Number(item.actualArea).toFixed(2)}</td>
                         <td className="px-4 py-2">{item.saleableArea}</td>
                         <td className="px-4 py-2">{item.PLC}</td>
-                        <td className="px-4 py-2">{item.plcCharges}</td>
 
                       </tr>
                     ))}

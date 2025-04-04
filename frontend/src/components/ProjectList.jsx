@@ -457,7 +457,6 @@ const ProjectList = () => {
                       {visibleFields?.includes("actualArea") && <th className="px-4 py-2">Actual Area</th>}
                       {visibleFields?.includes("saleableArea") && <th className="px-4 py-2">Saleable Area</th>}
                       {visibleFields?.includes("PLC") && <th className="px-4 py-2">PLC</th>}
-                      {visibleFields?.includes("plcCharges") && <th className="px-4 py-2">PLC Charges</th>}
                       {visibleFields?.includes("status") && <th className="px-4 py-2">Status</th>}
                       <th className="px-4 py-2"></th>
                     </tr>
@@ -482,7 +481,6 @@ const ProjectList = () => {
                         {visibleFields?.includes("actualArea") && <td className="px-4 py-2">{item.actualArea}</td>}
                         {visibleFields?.includes("saleableArea") && <td className="px-4 py-2">{item.saleableArea}</td>}
                         {visibleFields?.includes("PLC") && <td className="px-4 py-2">{item.PLC}</td>}
-                        {visibleFields?.includes("plcCharges") && <td className="px-4 py-2">{item.plcCharges}</td>}
                         <td
                           className={`px-4 py-2 font-semibold ${item.status === "Sold"
                               ? "text-green-600"
