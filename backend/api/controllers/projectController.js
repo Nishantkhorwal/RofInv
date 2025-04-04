@@ -354,7 +354,7 @@ export const handleSaleRequest = async (req, res, io) => {
     chequeImagePath, 
     customerInfo, 
     unitDetails, 
-    paymentDetails,
+  
     mainBroker 
   } = req.body; // Allow admins to update these fields
 
@@ -387,7 +387,7 @@ export const handleSaleRequest = async (req, res, io) => {
 
     // Ensure required form details are filled before approval
     if (action === 'approve') {
-      if (!customerInfo || !unitDetails || !paymentDetails) {
+      if (!customerInfo || !unitDetails) {
         return res.status(400).json({ 
           success: false, 
           message: 'Customer, unit, and payment details must be provided before approving the request.' 
@@ -395,7 +395,6 @@ export const handleSaleRequest = async (req, res, io) => {
       }
       saleRequest.customerInfo = customerInfo;
       saleRequest.unitDetails = unitDetails;
-      saleRequest.paymentDetails = paymentDetails || [];
       if (mainBroker) {
         saleRequest.mainBroker = mainBroker;
       }
@@ -439,7 +438,7 @@ export const handleSaleRequest = async (req, res, io) => {
 
 export const editSaleRequestCustomerDetails = async (req, res) => {
   const { requestId } = req.params;
-  const {  customerInfo, unitDetails,  mainBroker } = req.body;
+  const { customerName, customerInfo, unitDetails,  mainBroker } = req.body;
 
   try {
     // Find the sale request
@@ -447,7 +446,10 @@ export const editSaleRequestCustomerDetails = async (req, res) => {
     if (!saleRequest) {
       return res.status(404).json({ success: false, message: 'Sale request not found.' });
     }
-
+    
+    if (customerName !== undefined) { // Explicit check for undefined
+      saleRequest.customerName = customerName;
+    }
     // Update nested customer details if provided
     if (customerInfo) {
       saleRequest.customerInfo = { ...saleRequest.customerInfo, ...customerInfo };
@@ -481,7 +483,7 @@ export const getSaleRequests = async (req, res) => {
     // Fetch all sale requests with populated inventory details
     const saleRequests = await SaleRequest.find()
       .populate('inventoryId', 'customerName chequeImagePath panCardImagePath unitNumber type floor')
-      .populate('createdBy', 'name');
+      .populate('createdBy mainBroker', 'name');
 
       const groupedRequests = saleRequests.reduce((acc, request) => {
         const brokerName = request.createdBy.name;

@@ -368,7 +368,27 @@ const [chequeStatusFilter, setChequeStatusFilter] = useState('all'); // 'all', '
         });
 
         const data = await response.json();
-        if (data.success) {
+         if (data.success) {
+      setSaleRequests(prev => {
+        const updated = {...prev};
+        
+        // Remove from all categories
+        Object.keys(updated).forEach(category => {
+          updated[category] = updated[category].filter(req => req._id !== requestId);
+        });
+
+        // Add to approved with correct status
+        updated.approved = [
+          ...updated.approved,
+          {
+            ...data.saleRequest,
+            inventoryId: data.inventoryItem,
+            status: 'Approved' // Explicitly set status
+          }
+        ];
+
+        return updated;
+      });
           setShowApprovalForm(false);
           console.log("Sale request approved successfully");
         } else {
@@ -391,24 +411,31 @@ const [chequeStatusFilter, setChequeStatusFilter] = useState('all'); // 'all', '
 
         const data = await response.json();
         if (data.success) {
-          setSaleRequests((prevRequests) => {
+          setSaleRequests(prevRequests => {
             const updatedRequests = { ...prevRequests };
-
-            Object.keys(updatedRequests).forEach((category) => {
-              updatedRequests[category] = updatedRequests[category].filter((req) => req._id !== requestId);
+            
+            // Remove from all categories first
+            Object.keys(updatedRequests).forEach(category => {
+              updatedRequests[category] = updatedRequests[category].filter(req => req._id !== requestId);
             });
-
-            const updatedRequest = {
-              ...data.saleRequest,
-              inventoryId: data.inventoryItem,
-            };
-
-            const newStatus = updatedRequest.status.toLowerCase();
-            if (!updatedRequests[newStatus]) {
-              updatedRequests[newStatus] = [];
-            }
-            updatedRequests[newStatus].push(updatedRequest);
-
+    
+            // Determine the new category based on the action
+            const newCategory = action === 'approve' ? 'approved' : 
+                              action === 'reject' ? 'rejected' : 
+                              'pending';
+    
+            // Add to the correct category
+            updatedRequests[newCategory] = [
+              ...(updatedRequests[newCategory] || []),
+              {
+                ...data.saleRequest,
+                inventoryId: data.inventoryItem,
+                status: action === 'approve' ? 'Approved' : 
+                       action === 'reject' ? 'Rejected' : 
+                       'Pending'
+              }
+            ];
+    
             return updatedRequests;
           });
 
@@ -612,8 +639,10 @@ const [chequeStatusFilter, setChequeStatusFilter] = useState('all'); // 'all', '
 
       // Apply search filter
       const filteredRequests = requests.filter((request) => {
-        // Search filter
-        const matchesSearch = request.inventoryId.customerName?.toLowerCase().includes(requestSearchTerm.toLowerCase());
+        const customerName = request.customerName || request.inventoryId?.customerName || '';
+  
+  // Search filter - now uses the correct name
+  const matchesSearch = customerName.toLowerCase().includes(requestSearchTerm.toLowerCase());
         
         // Broker filter
         const matchesBroker = !selectedBrokerFilter || request.createdBy?._id === selectedBrokerFilter;
@@ -672,8 +701,8 @@ const [chequeStatusFilter, setChequeStatusFilter] = useState('all'); // 'all', '
                 ).length || 0;
                   return (
                   <tr key={request._id}>
-                    <td className="px-4 py-4">{request.createdBy.name || 'No Executive'}</td>
-                    <td className="px-4 py-4">{request.inventoryId.customerName || 'No Customer'}</td>
+                    <td className="px-4 py-4">{request.createdBy.name || 'Loading...'}</td>
+                    <td className="px-4 py-4">{request.customerName || request.inventoryId?.customerName || 'No Customer'}</td>
                     <td className="px-4 py-4">{request.inventoryId.unitNumber || 'No Unit '}</td>
                     <td className="px-4 py-4">{request.inventoryId.floor || 'No Floor '}</td>
                     <td className="px-4 py-4">{request.status}</td>

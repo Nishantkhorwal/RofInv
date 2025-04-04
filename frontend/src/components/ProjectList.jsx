@@ -392,17 +392,6 @@ const ProjectList = () => {
               <option value="Unsold">Unsold</option>
               <option value="Hold">Hold</option>
             </select>
-
-            {/* PLC Filter Dropdown */}
-            <select
-              value={filterPLC}
-              onChange={(e) => setFilterPLC(e.target.value)}
-              className="border rounded-lg shadow-sm mr-4 px-4 py-2"
-            >
-              <option value="All">PLC (All)</option>
-              <option value="Yes">Yes</option>
-              <option value="No">No</option>
-            </select>
             <div className="flex space-x-4">
               <label className="flex items-center space-x-2">
                 <input
