@@ -440,7 +440,7 @@ const ProjectList = () => {
                 <table className="table-auto text-center  w-full mt-2">
                   <thead className='sticky top-0 bg-white z-10'>
                     <tr>
-                      <th className='px-2 py-2'>S No.</th>
+                      
                       {visibleFields?.includes("areaSqYard") && <th className="px-4 py-2">AREA (Sq.Yard)</th>}
                       {visibleFields?.includes("W") && <th className="px-4 py-2">W</th>}
                       {visibleFields?.includes("L") && <th className="px-4 py-2">L</th>}
@@ -463,24 +463,32 @@ const ProjectList = () => {
 
                   </thead>
                   <tbody>
-                    {project.inventory.map((item, index) => (
+                  {(() => {
+  const isSearching = inventorySearchTerm.trim() !== "";
+
+  // If user is searching, show all matching inventory
+  // Otherwise, only show first 10
+  const visibleInventory = isSearching
+    ? project.inventory
+    : project.inventory.slice(0, 10);
+
+  return visibleInventory.map((item, index) => (
                       <tr key={item._id}>
-                        <td className="px-4 py-2">{index}</td>
-                        {visibleFields?.includes("areaSqYard") && <td className="px-4 py-2">{item.areaSqYard}</td>}
+                        {visibleFields?.includes("areaSqYard") && <td className="px-4 py-2">{Number(item.areaSqYard).toFixed(2)}</td>}
                         {visibleFields?.includes("W") && <td className="px-4 py-2">{item.W}</td>}
                         {visibleFields?.includes("L") && <td className="px-4 py-2">{item.L}</td>}
                         {visibleFields?.includes("type") && <td className="px-4 py-2">{item.type}</td>}
                         {visibleFields?.includes("unitNumber") && <td className="px-4 py-2">{item.unitNumber}</td>}
                         {visibleFields?.includes("floor") && <td className="px-4 py-2">{item.floor}</td>}
-                        {visibleFields?.includes("carpetArea") && <td className="px-4 py-2">{item.carpetArea}</td>}
-                        {visibleFields?.includes("terraceArea") && <td className="px-4 py-2">{item.terraceArea}</td>}
-                        {visibleFields?.includes("stiltArea") && <td className="px-4 py-2">{item.stiltArea}</td>}
-                        {visibleFields?.includes("basementArea") && <td className="px-4 py-2">{item.basementArea}</td>}
-                        {visibleFields?.includes("mumty") && <td className="px-4 py-2">{item.mumty}</td>}
-                        {visibleFields?.includes("commonArea") && <td className="px-4 py-2">{item.commonArea}</td>}
-                        {visibleFields?.includes("actualArea") && <td className="px-4 py-2">{item.actualArea}</td>}
-                        {visibleFields?.includes("saleableArea") && <td className="px-4 py-2">{item.PLC}</td>}
-                        {visibleFields?.includes("PLC") && <td className="px-4 py-2">{item.plcCharges}</td>}
+                        {visibleFields?.includes("carpetArea") && <td className="px-4 py-2">{Number(item.carpetArea).toFixed(2)}</td>}
+                        {visibleFields?.includes("terraceArea") && <td className="px-4 py-2">{Number(item.terraceArea).toFixed(2)}</td>}
+                        {visibleFields?.includes("stiltArea") && <td className="px-4 py-2">{Number(item.stiltArea).toFixed(2)}</td>}
+                        {visibleFields?.includes("basementArea") && <td className="px-4 py-2">{Number(item.basementArea).toFixed(2)}</td>}
+                        {visibleFields?.includes("mumty") && <td className="px-4 py-2">{Number(item.mumty).toFixed(2)}</td>}
+                        {visibleFields?.includes("commonArea") && <td className="px-4 py-2">{Number(item.commonArea).toFixed(2)}</td>}
+                        {visibleFields?.includes("actualArea") && <td className="px-4 py-2">{Number(item.actualArea).toFixed(2)}</td>}
+                        {visibleFields?.includes("PLC") && <td className="px-4 py-2">{item.PLC}</td>}
+                        {visibleFields?.includes("plcCharges") && <td className="px-4 py-2">{item.plcCharges}</td>}
                         <td
                           className={`px-4 py-2 font-semibold ${item.status === "Sold"
                               ? "text-green-600"
@@ -504,7 +512,9 @@ const ProjectList = () => {
                           </button>
                         </td>
                       </tr>
-                    ))}
+                      ));
+                    })()}
+                    
                   </tbody>
                 </table>
               </div>
