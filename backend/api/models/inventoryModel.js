@@ -33,11 +33,11 @@ const inventorySchema = new mongoose.Schema(
     },
     carpetArea: {
       type: String,
-      required: true,
+      required: false,
     },
     balconyArea: {
       type: String,
-      required: true,
+      required: false,
     },
     terraceArea: {
       type: String,
@@ -61,11 +61,11 @@ const inventorySchema = new mongoose.Schema(
     },
     actualArea: {
       type: String,
-      required: true,
+      required: false,
     },
     saleableArea: {
       type: String,
-      required: true,
+      required: false,
     },
     PLC: {
       type: String,
