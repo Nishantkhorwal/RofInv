@@ -489,7 +489,11 @@ const ProjectList = () => {
                         {visibleFields?.includes("commonArea") && <td className="px-4 py-2">{Number(item.commonArea).toFixed(2)}</td>}
                         {visibleFields?.includes("actualArea") && <td className="px-4 py-2">{Number(item.actualArea).toFixed(2)}</td>}
                         {visibleFields?.includes("PLC") && <td className="px-4 py-2">{item.PLC}</td>}
-                        {visibleFields?.includes("plcCharges") && <td className="px-4 py-2">{item.plcCharges}</td>}
+                        {visibleFields?.includes("plcCharges") && <td className="px-4 py-2">
+                          {parseFloat(item.plcCharges) >= 0 && parseFloat(item.plcCharges) <= 1
+                            ? `${parseFloat(item.plcCharges) * 100}%`
+                            : item.plcCharges}
+                        </td>}
                         <td
                           className={`px-4 py-2 font-semibold ${item.status === "Sold"
                               ? "text-green-600"
