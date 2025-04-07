@@ -1476,7 +1476,12 @@ const [chequeStatusFilter, setChequeStatusFilter] = useState('all'); // 'all', '
                         <td className="px-4 py-2">{Number(item.commonArea).toFixed(2)}</td>
                         <td className="px-4 py-2">{Number(item.actualArea).toFixed(2)}</td>
                         <td className="px-4 py-2">{item.PLC}</td>
-                        <td className="px-4 py-2">{item.plcCharges}</td>
+                        <td className="px-4 py-2">
+                          {parseFloat(item.plcCharges) >= 0 && parseFloat(item.plcCharges) <= 1
+                            ? `${parseFloat(item.plcCharges) * 100}%`
+                            : item.plcCharges}
+                        </td>
+
 
                       </tr>
                     ))}

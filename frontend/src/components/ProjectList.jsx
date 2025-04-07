@@ -458,7 +458,7 @@ const ProjectList = () => {
                       {visibleFields?.includes("PLC") && <th className="px-4 py-2">PLC</th>}
                       {visibleFields?.includes("plcCharges") && <th className="px-4 py-2">Charges</th>}
                       {visibleFields?.includes("status") && <th className="px-4 py-2">Status</th>}
-                      <th className="px-4 py-2"></th>
+                      <th className="px-4 py-2">Sell</th>
                     </tr>
 
                   </thead>
