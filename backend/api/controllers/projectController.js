@@ -778,7 +778,9 @@ export const deletePayment = async (req, res) => {
 
 export const downloadApprovedRequests = async (req, res) => {
   try {
-    const approvedRequests = await SaleRequest.find({ status: 'Approved' }).select(
+    const approvedRequests = await SaleRequest.find({ status: 'Approved' })
+    .populate('inventoryId', 'unitNumber')
+    .select(
       'customerName customerInfo.contactNumber customerInfo.email customerInfo.guardianName customerInfo.panNumber customerInfo.aadharCardNumber customerInfo.address customerInfo.state customerInfo.country customerInfo.pin unitDetails.unitType unitDetails.unitCost'
     );
 
@@ -818,7 +820,7 @@ export const downloadApprovedRequests = async (req, res) => {
         pin: request.customerInfo?.pin || 'N/A',
         contactNumber: request.customerInfo?.contactNumber || 'N/A',
         email: request.customerInfo?.email || 'N/A',
-        unitType: request.unitDetails?.unitType || 'N/A',
+        unitType: request.inventoryId?.unitNumber || 'N/A',
         unitCost: request.unitDetails?.unitCost || 'N/A',
      
       });
