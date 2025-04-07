@@ -481,6 +481,7 @@ const ProjectList = () => {
                         {visibleFields?.includes("unitNumber") && <td className="px-4 py-2">{item.unitNumber}</td>}
                         {visibleFields?.includes("floor") && <td className="px-4 py-2">{item.floor}</td>}
                         {visibleFields?.includes("carpetArea") && <td className="px-4 py-2">{Number(item.carpetArea).toFixed(2)}</td>}
+                        {visibleFields?.includes("balconyArea") && <td className="px-4 py-2">{Number(item.balconyArea).toFixed(2)}</td>}
                         {visibleFields?.includes("terraceArea") && <td className="px-4 py-2">{Number(item.terraceArea).toFixed(2)}</td>}
                         {visibleFields?.includes("stiltArea") && <td className="px-4 py-2">{Number(item.stiltArea).toFixed(2)}</td>}
                         {visibleFields?.includes("basementArea") && <td className="px-4 py-2">{Number(item.basementArea).toFixed(2)}</td>}
