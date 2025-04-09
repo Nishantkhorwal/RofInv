@@ -79,7 +79,7 @@ const EditSelfInfo = () => {
       <h2 className="text-2xl font-bold text-center mb-6">Update Your Information</h2>
       {message && <p className="text-center mb-4 text-blue-600">{message}</p>}
       <form onSubmit={handleSubmit} className="space-y-4">
-        {['name', 'phone', 'email', 'gstNumber', 'reraNumber'].map((field) => (
+        {['name', 'email', 'gstNumber', 'reraNumber'].map((field) => (
           <div key={field}>
             <label className="block text-gray-700 capitalize">{field}</label>
             <input
