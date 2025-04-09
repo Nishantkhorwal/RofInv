@@ -551,10 +551,6 @@ export const updateInventoryStatusWithRequestHandling = async (req, res, io) => 
       const existingRequest = await SaleRequest.findOne({ inventoryId, status: { $in: ['Pending', 'Approved'] } });
 
       if (!existingRequest) {
-        // Ensure all required fields are provided
-        if (!customerName || !panCardImagePath || !chequeImagePath || !customerInfo || !unitDetails) {
-          return res.status(400).json({ success: false, message: 'All customer details, images, and payment information must be provided.' });
-        }
 
         // Create a new approved sale request
         const saleRequest = new SaleRequest({

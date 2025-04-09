@@ -111,10 +111,10 @@ const SaleForm = ({ inventory, closeForm, userId }) => {
             mainBroker,
         } = formData;
 
-        if (!customerName || !panCardImage || !chequeImage || !customerInfo) {
-            alert('Please fill in all the required fields.');
-            return;
-        }
+        // if (!customerName || !panCardImage || !chequeImage || !customerInfo) {
+        //     alert('Please fill in all the required fields.');
+        //     return;
+        // }
 
         const formDataToSubmit = new FormData();
         formDataToSubmit.append('inventoryId', inventory._id);
@@ -159,6 +159,7 @@ const SaleForm = ({ inventory, closeForm, userId }) => {
                 window.location.reload();
             } else {
                 alert(result.message || 'Failed to mark as Sold.');
+                console.log("result message",result.message)
             }
         } catch (error) {
             console.error('Error submitting the form:', error);
@@ -180,7 +181,7 @@ const SaleForm = ({ inventory, closeForm, userId }) => {
                                 value={formData.customerName}
                                 onChange={handleChange}
                                 className="mt-2 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                required
+                                
                             />
                         </div>
                         <div className="flex flex-col">
