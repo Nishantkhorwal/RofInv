@@ -5,6 +5,7 @@ import { RiArrowRightSLine } from "react-icons/ri";
 import { RiArrowLeftSLine } from "react-icons/ri";
 import { FaHome } from 'react-icons/fa';
 import { RxCross2 } from "react-icons/rx";
+import EditSelfInfo from './EditSelfInfo';
 
 // Initialize the WebSocket connection
 const socket = io(`${import.meta.env.VITE_API_BASE_URL}`); // Replace with your backend URL
@@ -567,6 +568,8 @@ const ProjectList = () => {
     switch (activeTab) {
       case 'projects':
         return renderProjectsTable();
+      case 'self-info' : 
+        return <EditSelfInfo/>  
       case 'logout':
         return <h2 className="text-2xl font-bold">You have logged out.</h2>;
       default:
@@ -609,6 +612,13 @@ const ProjectList = () => {
             Projects
           </li>
           <li
+            onClick={() => setActiveTab('self-info')}
+            className={`text-gray-600 hover:bg-gray-300 px-2 py-2 rounded cursor-pointer ${activeTab === 'self-info' ? 'bg-gray-300' : ''
+              }`}
+          >
+            Profile Update
+          </li>
+          <li
             onClick={handleLogout}
             className="rounded text-gray-600 cursor-pointer hover:bg-gray-300 px-2 py-2"
           >
@@ -629,7 +639,7 @@ const ProjectList = () => {
 
       {/* Main Content */}
       <div
-        className={`flex-grow  overflow-y-scroll  py-20 bg-[#FFFDD0] transition-all duration-300 ${isSidebarOpen ? 'lg:pl-8' : 'px-6 lg:px-0 lg:pl-16'}`}
+        className={`flex-grow  overflow-y-scroll  py-10 bg-[#FFFDD0] transition-all duration-300 ${isSidebarOpen ? 'lg:pl-8' : 'px-6 lg:px-0 lg:pl-16'}`}
       >
         <div className="p-4">{renderContent()}</div>
       </div>

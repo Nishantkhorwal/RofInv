@@ -206,6 +206,9 @@ export const getUser = async (req, res) => {
         id: user._id,
         name: user.name,
         phone: user.phone,
+        email: user.email,
+        gstNumber: user.gstNumber,
+        reraNumber: user.reraNumber,
         role: user.role,
         assignedProjects: user.assignedProjects,
         visibleFields: finalVisibleFields, // Ensures required fields are always included
@@ -222,34 +225,27 @@ export const getUser = async (req, res) => {
 // Update Self Information Controller (Only name, phone, and password)
 export const updateSelfInfo = async (req, res) => {
   try {
-    const { name, phone, password } = req.body;
-    const userId = req.user.id; // Assuming the userId is stored in the JWT token
+    const { name, phone, email, gstNumber, reraNumber } = req.body;
+    const userId = req.user.id;
 
-    // Ensure at least one field is provided for update (name, phone, or password)
-    if (!name && !phone && !password) {
-      return res.status(400).json({ message: "At least one field (name, phone, or password) must be provided to update." });
+    // Ensure at least one field is provided for update
+    if (!name && !phone && !email && !gstNumber && !reraNumber) {
+      return res.status(400).json({ message: "At least one field must be provided to update." });
     }
 
-    // Find the user to be updated
     const user = await ROFUser.findById(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found." });
     }
 
-    // Update fields if provided
+    // Update editable fields
     if (name) user.name = name;
     if (phone) user.phone = phone;
-    if (password) {
-      const hashedPassword = await bcrypt.hash(password, 10);
-      user.password = hashedPassword;
-    }
+    if (email) user.email = email;
+    if (gstNumber) user.gstNumber = gstNumber;
+    if (reraNumber) user.reraNumber = reraNumber;
 
-    // Save updated user information
     await user.save();
-
-    // Ensure always-visible fields are included in the response
-    const alwaysVisibleFields = ["type", "unitNumber", "floor", "actualArea", "saleableArea", "plcCharges", "status"];
-    const finalVisibleFields = [...new Set([...(user.visibleFields || []), ...alwaysVisibleFields])];
 
     return res.status(200).json({
       message: "Your information has been updated successfully.",
@@ -257,9 +253,12 @@ export const updateSelfInfo = async (req, res) => {
         id: user._id,
         name: user.name,
         phone: user.phone,
+        email: user.email,
+        gstNumber: user.gstNumber,
+        reraNumber: user.reraNumber,
         role: user.role,
         assignedProjects: user.assignedProjects,
-        visibleFields: finalVisibleFields, // Ensuring required fields are always included
+        visibleFields: user.visibleFields,
       },
     });
   } catch (error) {
@@ -267,6 +266,7 @@ export const updateSelfInfo = async (req, res) => {
     return res.status(500).json({ message: "Failed to update your information.", error: error.message || error });
   }
 };
+
 
 export const updateUserByAdmin = async (req, res) => {
   try {
