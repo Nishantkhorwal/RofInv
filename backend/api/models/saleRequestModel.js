@@ -56,7 +56,7 @@ const saleRequestSchema = new mongoose.Schema({
     unitCost: { type: Number },
     otherCharges: { type: Number },
   },
-  basePrice: { type: Number},
+  basePrice: { type: Number, default : 0},
   paymentDetails: [
     {
       chequeNumber: { type: String },
