@@ -443,6 +443,7 @@ function RequestEditForm({ closeForm, requestId, onUpdate }) {
                                     setFormData({ ...formData, basePrice: e.target.value })
                                 }
                                 className="w-full p-2 border border-gray-300 rounded-md"
+                                required
                             />
                         </div>
                         <div className="form-group">
