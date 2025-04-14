@@ -478,14 +478,15 @@ export const editSaleRequestCustomerDetails = async (req, res) => {
       saleRequest.mainBroker = mainBroker;
     }
     if (basePrice !== undefined) {
-      basePrice = Number(basePrice);
-      saleRequest.basePrice = basePrice;
+      const numericBasePrice = Number(basePrice);
+      saleRequest.basePrice = numericBasePrice;
     
       // Recalculate all existing payment percentages
       if (saleRequest.paymentDetails.length > 0) {
-        saleRequest.paymentDetails = recalculatePercentages(saleRequest.paymentDetails, basePrice);
+        saleRequest.paymentDetails = recalculatePercentages(saleRequest.paymentDetails, numericBasePrice);
       }
     }
+    
 
     if (brokerageDetails) {
       saleRequest.brokerageDetails = {
