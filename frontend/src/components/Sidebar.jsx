@@ -1407,7 +1407,7 @@ const Sidebar = () => {
               className="px-4 py-2 font-semibold bg-yellow-500 text-black rounded-lg hover:bg-yellow-600 transition"
               disabled={brokerDetails}
             >
-              {brokerDetails ? "Creating Excel..." : "Download Broker Details"}
+              {brokerDetails ? "Creating Excel..." : "Broker Details"}
             </button>
           )}
 
