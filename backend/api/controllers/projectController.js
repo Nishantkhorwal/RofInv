@@ -478,6 +478,7 @@ export const editSaleRequestCustomerDetails = async (req, res) => {
       saleRequest.mainBroker = mainBroker;
     }
     if (basePrice !== undefined) {
+      basePrice = Number(basePrice);
       saleRequest.basePrice = basePrice;
     
       // Recalculate all existing payment percentages
