@@ -9,6 +9,7 @@ const BrokerDetails = () => {
   const [selectedBroker, setSelectedBroker] = useState("");
   const [currentPage, setCurrentPage] = useState(1); // Track current page
   const [brokersPerPage] = useState(1); // Number of brokers per page (set to 2)
+  const [showPendingBrokerageOnly,setShowPendingBrokerageOnly] = useState("");
 
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const [brokerList, setBrokerList] = useState([]); // Store all brokers
@@ -139,8 +140,8 @@ const BrokerDetails = () => {
           req._id === requestId
             ? {
               ...req,
-              ...(section === "mainBroker"
-                ? { mainBroker: value } // Update broker
+              ...(section === "mainBroker" || section === "basePrice" || section === "customerName"
+                ? { [section]: value }
                 : {
                   [section]: {
                     ...req[section],
@@ -186,7 +187,9 @@ const BrokerDetails = () => {
           Authorization: token ? `Bearer ${token}` : "",
         },
         body: JSON.stringify(
-          section === "mainBroker" ? { mainBroker: value } : { [section]: { [field]: value } }
+          section === "mainBroker" || section === "basePrice" || section === "customerName"
+            ? { [section]: value }
+            : { [section]: { [field]: value } }
         ),
       });
       const responseData = await response.json();
@@ -212,14 +215,33 @@ const BrokerDetails = () => {
   const filteredRequests = Object.keys(groupedRequests).reduce((acc, brokerName) => {
     if (selectedBroker && selectedBroker !== brokerName) return acc;
     const brokerSearchQuery = searchQueries[brokerName] || "";
-
-    // Always include the broker if it matches the selected filter
-    acc[brokerName] = groupedRequests[brokerName].filter((request) =>
-      request.customerName?.toLowerCase().includes(brokerSearchQuery.toLowerCase())
-    );
-
+  
+    acc[brokerName] = groupedRequests[brokerName].filter((request) => {
+      const matchesSearch = request.customerName?.toLowerCase().includes(brokerSearchQuery.toLowerCase());
+      if (!matchesSearch) return false;
+  
+      const totalPercentagePaid = (request.paymentDetails || []).reduce(
+        (total, payment) => total + (Number(payment.percentagePaid) || 0),
+        0
+      );
+      const isPending = !request.brokerageDetails?.isBrokerageComplete;
+      const isPaid = request.brokerageDetails?.isBrokerageComplete;
+  
+      if (showPendingBrokerageOnly === "pending") {
+        return totalPercentagePaid >= 40 && isPending;
+      }
+  
+      if (showPendingBrokerageOnly === "paid") {
+        return isPaid;
+      }
+  
+      // Default to "all"
+      return true;
+    });
+  
     return acc;
   }, {});
+  
   // Get current brokers for pagination
   const brokerNames = Object.keys(filteredRequests);
   const indexOfLastBroker = currentPage * brokersPerPage;
@@ -241,7 +263,24 @@ const BrokerDetails = () => {
     <div className="p-6 bg-gray-100 min-h-screen">
       <div className="flex justify-between w-full mb-6 ">
         <h1 className="text-3xl font-bold text-gray-800  text-center">Broker Details</h1>
-        <div className="">
+        <div className=" flex flex-row gap-4">
+        <div className="flex items-center gap-2">
+          <label htmlFor="brokerageFilter" className="text-gray-700 font-medium">
+            Filter by Brokerage:
+          </label>
+          <select
+            id="brokerageFilter"
+            value={showPendingBrokerageOnly}
+            onChange={(e) => setShowPendingBrokerageOnly(e.target.value)}
+            className="border rounded px-2 py-1"
+          >
+            <option value="all">All</option>
+            <option value="pending">Pending Brokerage (≥ 40%)</option>
+            <option value="paid">Paid Brokerage</option>
+          </select>
+        </div>
+
+
           <select
             value={selectedBroker}
             onChange={(e) => setSelectedBroker(e.target.value)}
@@ -300,6 +339,40 @@ const BrokerDetails = () => {
                       <FiEdit className="w-5 h-5" />
                     )}
                   </button>
+                  {(() => {
+                    const paymentDetails = request.paymentDetails || [];
+                    const totalPercentagePaid = paymentDetails.reduce(
+                      (total, payment) => total + (Number(payment.percentagePaid) || 0),
+                      0
+                    );
+
+                    return (
+                      <>
+                        {/* 🔥 Highlight if payment >= 40% */}
+                        {totalPercentagePaid >= 40 && (
+                          <div className="mb-4 p-3 bg-yellow-100 max-w-[90%] border-l-4 border-yellow-500 rounded shadow-sm">
+                            <p className="text-yellow-800 font-semibold">
+                              🎉 Customer has paid {totalPercentagePaid}% – Eligible for Brokerage Release!
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Payment Progress Bar */}
+                        <div className="w-full bg-gray-200 h-3 max-w-[90%] rounded-full mb-2">
+                          <div
+                            className="h-full bg-green-500 rounded-full transition-all duration-500"
+                            style={{ width: `${Math.min(totalPercentagePaid, 100)}%` }}
+                          ></div>
+                        </div>
+
+                        {/* Display Percentage Below the Bar */}
+                        <div className="mb-2 text-sm font-semibold text-green-600">
+                          Total Percentage Paid: {totalPercentagePaid}%
+                        </div>
+                      </>
+                    );
+                  })()}
+
 
                   {/* Status Badge */}
                   <span className="inline-block px-3 py-1 text-sm font-semibold rounded-full mb-3 bg-green-200 text-green-800">
@@ -308,10 +381,21 @@ const BrokerDetails = () => {
 
                   {/* Customer Details */}
                   <div className="mb-4">
-                    <p className="text-lg font-semibold text-gray-700 mb-6">
-                      Customer : {request.customerName}
-
-                    </p>
+                  <p className="text-gray-600 mb-4 text-xl">
+                        <strong>Customer Name:</strong>{" "}
+                        {editingRequest === request._id ? (
+                          <input
+                            type="text"
+                            className="border px-2 py-1 rounded"
+                            value={request.customerName || ""}
+                            onChange={(e) =>
+                              handleChange(request._id, "customerName", null, e.target.value)
+                            }
+                          />
+                        ) : (
+                          `${request.customerName || "N/A"}`
+                        )}
+                      </p>
 
                     <div className="grid grid-cols-3  gap-5">
                       {[
@@ -368,6 +452,21 @@ const BrokerDetails = () => {
                         )}
                       </p>
                       <p className="text-gray-600">
+                        <strong>Base Price:</strong>{" "}
+                        {editingRequest === request._id ? (
+                          <input
+                            type="number"
+                            className="border px-2 py-1 rounded"
+                            value={request.basePrice || ""}
+                            onChange={(e) =>
+                              handleChange(request._id, "basePrice", null, e.target.value)
+                            }
+                          />
+                        ) : (
+                          `₹${request.basePrice || "N/A"}`
+                        )}
+                      </p>
+                      <p className="text-gray-600">
                         <strong>Main Broker:</strong>{" "}
                         {editingRequest === request._id ? (
                           <select
@@ -391,7 +490,7 @@ const BrokerDetails = () => {
                       <p className="text-gray-600">
                         <strong>PAN Card:</strong>{" "}
 
-                        
+
                         {request.inventoryId.panCardImagePath ?
                           (
                             <a
@@ -430,6 +529,54 @@ const BrokerDetails = () => {
                         }
 
                       </p>
+                      {/* Brokerage Details: totalBrokerage */}
+                      <p className="text-gray-600">
+                        <strong>Total Brokerage:</strong>{" "}
+                        {editingRequest === request._id ? (
+                          <input
+                            type="number"
+                            className="border px-2 py-1 rounded"
+                            value={request.brokerageDetails?.totalBrokerage || ""}
+                            onChange={(e) =>
+                              handleChange(
+                                request._id,
+                                "brokerageDetails",
+                                "totalBrokerage",
+                                Number(e.target.value)
+                              )
+                            }
+                          />
+                        ) : (
+                          `₹${request.brokerageDetails?.totalBrokerage?.toLocaleString() || "N/A"}`
+                        )}
+                      </p>
+
+                      {/* Brokerage Details: isBrokerageComplete */}
+                      <p className="text-green-700 ">
+                        <strong className="text-gray-600">Brokerage Complete:</strong>{" "}
+                        {editingRequest === request._id ? (
+                          <select
+                            className="border font-bold px-2 py-1  rounded"
+                            value={request.brokerageDetails?.isBrokerageComplete ? "true" : "false"}
+                            onChange={(e) =>
+                              handleChange(
+                                request._id,
+                                "brokerageDetails",
+                                "isBrokerageComplete",
+                                e.target.value === "true"
+                              )
+                            }
+                          >
+                            <option  value="true">Yes</option>
+                            <option value="false">No</option>
+                          </select>
+                        ) : request.brokerageDetails?.isBrokerageComplete ? (
+                          "Yes"
+                        ) : (
+                          "No"
+                        )}
+                      </p>
+
 
                     </div>
 

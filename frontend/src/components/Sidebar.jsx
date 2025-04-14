@@ -17,6 +17,7 @@ import { IoIosCreate } from "react-icons/io";
 import { MdModeEditOutline } from "react-icons/md";
 import { GoArrowRight } from "react-icons/go";
 import { CiEdit } from "react-icons/ci";
+import { RxCross2 } from "react-icons/rx";
 
 import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
@@ -42,6 +43,12 @@ const Sidebar = () => {
   const [selectedCategory, setSelectedCategory] = useState('Pending'); // Track selected category
   const [hasPendingRequests, setHasPendingRequests] = useState(false);
   const [dropdownVisible, setDropdownVisible] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState('');
+  const [showPendingBrokerageOnly, setShowPendingBrokerageOnly] = useState('all');
+  const [download, setDownload] = useState(false);
+  const [brokerDetails, setBrokerDetails] = useState(false);
+  const[userLoading, setUserLoading] = useState(false);
+
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   const toggleDropdown = () => {
@@ -191,11 +198,12 @@ const Sidebar = () => {
 
   const [requestSearchTerm, setRequestSearchTerm] = useState(""); // Renamed for uniqueness
   const [requestPage, setRequestPage] = useState(1);
-  const requestItemsPerPage = 4; // Number of requests per page
+  const requestItemsPerPage = 10; // Number of requests per page
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [showApprovalForm, setShowApprovalForm] = useState(false);
   const [customerDetails, setCustomerDetails] = useState({
     executiveName: "",
+    basePrice: '',
     customerName: "",
     panCardImagePath: "",
     chequeImagePath: "",
@@ -230,76 +238,79 @@ const Sidebar = () => {
   });
   const [selectedBroker, setSelectedBroker] = useState("");
   const [saleRequestId, setSaleRequestId] = useState(null); // New state to hold requestId
-const [showSaleEditForm, setShowSaleEditForm] = useState(false);
+  const [showSaleEditForm, setShowSaleEditForm] = useState(false);
 
-const handleEditClick = (requestId) => {
-  setSaleRequestId(requestId);  // Store the requestId when edit is clicked
-  setShowSaleEditForm(true);    // Show the form
-};
-const [isOpen, setIsOpen] = useState(false);
-const [currentRequest, setCurrentRequest] = useState(null);
-const [paymentDetails, setPaymentDetails] = useState([]);
-const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-const [editingPaymentIndex, setEditingPaymentIndex] = useState(null);
-const [newPayment, setNewPayment] = useState({
-  chequeNumber: '',
-  date: new Date().toISOString().split('T')[0],
-  amount: '',
-  bankName: ''
-});
+  const handleEditClick = (requestId) => {
+    setSaleRequestId(requestId);  // Store the requestId when edit is clicked
+    setShowSaleEditForm(true);    // Show the form
+  };
+  const [isOpen, setIsOpen] = useState(false);
+  const [currentRequest, setCurrentRequest] = useState(null);
+  const [paymentDetails, setPaymentDetails] = useState([]);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [editingPaymentIndex, setEditingPaymentIndex] = useState(null);
+  const [newPayment, setNewPayment] = useState({
+    chequeNumber: '',
+    date: new Date().toISOString().split('T')[0],
+    amount: '',
+    bankName: ''
+  });
 
-useEffect(() => {
-  if (isOpen) {
-    const fetchData = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const response = await fetch(`${API_BASE_URL}/api/project/request`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: token ? `Bearer ${token}` : "",
-          },
-        });
+  useEffect(() => {
+    if (isOpen) {
+      const fetchData = async () => {
+        try {
+          const token = localStorage.getItem("token");
+          const response = await fetch(`${API_BASE_URL}/api/project/request`, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: token ? `Bearer ${token}` : "",
+            },
+          });
 
-        if (!response.ok) {
-          throw new Error(`Error: ${response.status} - ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        console.log("Fetched Data:", data);
-
-        // Check if saleRequests exists and has items
-        if (Array.isArray(data.saleRequests)) {
-          // Find the specific request you want or use the first one
-          const requestWithPayments = data.saleRequests.find(
-            request => Array.isArray(request.paymentDetails) && request.paymentDetails.length > 0
-          );
-
-          if (requestWithPayments) {
-            setPaymentDetails(requestWithPayments.paymentDetails);
-            console.log("payment details",paymentDetails)
-          } else {
-            console.log("No requests with payment details found");
-            setPaymentDetails([]); // Set empty array if no payments found
+          if (!response.ok) {
+            throw new Error(`Error: ${response.status} - ${response.statusText}`);
           }
-        } else {
-          console.error("saleRequests is not an array");
+
+          const data = await response.json();
+          console.log("Fetched Data:", data);
+
+          // Check if saleRequests exists and has items
+          if (Array.isArray(data.saleRequests)) {
+            // Find the specific request you want or use the first one
+            const requestWithPayments = data.saleRequests.find(
+              request => Array.isArray(request.paymentDetails) && request.paymentDetails.length > 0
+            );
+
+            if (requestWithPayments) {
+              setPaymentDetails(requestWithPayments.paymentDetails);
+              console.log("payment details", paymentDetails)
+            } else {
+              console.log("No requests with payment details found");
+              setPaymentDetails([]); // Set empty array if no payments found
+            }
+          } else {
+            console.error("saleRequests is not an array");
+            setPaymentDetails([]);
+          }
+        } catch (error) {
+          console.error("Error fetching sale requests:", error.message);
           setPaymentDetails([]);
         }
-      } catch (error) {
-        console.error("Error fetching sale requests:", error.message);
-        setPaymentDetails([]);
-      }
-    };
+      };
 
-    fetchData();
-  }
-}, [isOpen]);
-const [selectedBrokerFilter, setSelectedBrokerFilter] = useState('');
-const [chequeStatusFilter, setChequeStatusFilter] = useState('all'); // 'all', 'pending', 'cleared'
+      fetchData();
+    }
+  }, [isOpen]);
+  const [selectedBrokerFilter, setSelectedBrokerFilter] = useState('');
+  const [chequeStatusFilter, setChequeStatusFilter] = useState('all'); // 'all', 'pending', 'cleared'
+  useEffect(() => {
+    setRequestPage(1); // Reset to first page when filters change
+  }, [selectedCategory, selectedBrokerFilter, chequeStatusFilter, requestSearchTerm, showPendingBrokerageOnly]);
 
 
-      
+
 
 
 
@@ -323,6 +334,7 @@ const [chequeStatusFilter, setChequeStatusFilter] = useState('all'); // 'all', '
         customerName: request.inventoryId.customerName || "",
         panCardImagePath: request.inventoryId.panCardImagePath || "",
         chequeImagePath: request.inventoryId.chequeImagePath || "",
+        basePrice: '',
         customerInfo: request.customerInfo || {
           guardianName: "",
 
@@ -346,7 +358,7 @@ const [chequeStatusFilter, setChequeStatusFilter] = useState('all'); // 'all', '
           amount: "",
           bankName: "",
         }],
-        
+
       });
       setShowApprovalForm(true);
     };
@@ -362,33 +374,33 @@ const [chequeStatusFilter, setChequeStatusFilter] = useState('all'); // 'all', '
           },
           body: JSON.stringify({
             ...customerDetails, // Include customer details
-             mainBroker: selectedBroker, 
+            mainBroker: selectedBroker,
             action: "approve",  // Explicitly send action field
           }),
         });
 
         const data = await response.json();
-         if (data.success) {
-      setSaleRequests(prev => {
-        const updated = {...prev};
-        
-        // Remove from all categories
-        Object.keys(updated).forEach(category => {
-          updated[category] = updated[category].filter(req => req._id !== requestId);
-        });
+        if (data.success) {
+          setSaleRequests(prev => {
+            const updated = { ...prev };
 
-        // Add to approved with correct status
-        updated.approved = [
-          ...updated.approved,
-          {
-            ...data.saleRequest,
-            inventoryId: data.inventoryItem,
-            status: 'Approved' // Explicitly set status
-          }
-        ];
+            // Remove from all categories
+            Object.keys(updated).forEach(category => {
+              updated[category] = updated[category].filter(req => req._id !== requestId);
+            });
 
-        return updated;
-      });
+            // Add to approved with correct status
+            updated.approved = [
+              ...updated.approved,
+              {
+                ...data.saleRequest,
+                inventoryId: data.inventoryItem,
+                status: 'Approved' // Explicitly set status
+              }
+            ];
+
+            return updated;
+          });
           setShowApprovalForm(false);
           console.log("Sale request approved successfully");
         } else {
@@ -413,29 +425,29 @@ const [chequeStatusFilter, setChequeStatusFilter] = useState('all'); // 'all', '
         if (data.success) {
           setSaleRequests(prevRequests => {
             const updatedRequests = { ...prevRequests };
-            
+
             // Remove from all categories first
             Object.keys(updatedRequests).forEach(category => {
               updatedRequests[category] = updatedRequests[category].filter(req => req._id !== requestId);
             });
-    
+
             // Determine the new category based on the action
-            const newCategory = action === 'approve' ? 'approved' : 
-                              action === 'reject' ? 'rejected' : 
-                              'pending';
-    
+            const newCategory = action === 'approve' ? 'approved' :
+              action === 'reject' ? 'rejected' :
+                'pending';
+
             // Add to the correct category
             updatedRequests[newCategory] = [
               ...(updatedRequests[newCategory] || []),
               {
                 ...data.saleRequest,
                 inventoryId: data.inventoryItem,
-                status: action === 'approve' ? 'Approved' : 
-                       action === 'reject' ? 'Rejected' : 
-                       'Pending'
+                status: action === 'approve' ? 'Approved' :
+                  action === 'reject' ? 'Rejected' :
+                    'Pending'
               }
             ];
-    
+
             return updatedRequests;
           });
 
@@ -448,31 +460,50 @@ const [chequeStatusFilter, setChequeStatusFilter] = useState('all'); // 'all', '
       }
     };
     const handleDownload = async () => {
+      setBrokerDetails(true);
       try {
-        const response = await fetch(`${API_BASE_URL}/api/project/requests/approved/download`, {
+        let url = `${API_BASE_URL}/api/project/requests/approved/download`;
+
+        // If you want to download only for a specific broker (userId), add it as a query param
+        if (selectedBrokerFilter) {
+          url += `?userId=${selectedBrokerFilter}`;
+        }
+
+        const response = await fetch(url, {
           method: 'GET',
           headers: {
-            Authorization: `Bearer ${token}`, // Replace with actual token if needed
+            Authorization: `Bearer ${token}`,
           },
         });
-    
+
         if (!response.ok) {
           throw new Error('Failed to download file');
         }
-    
+
         const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
+        const downloadUrl = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = url;
-        a.download = 'approved_requests.xlsx';
+        a.href = downloadUrl;
+        a.download = `approved_requests_${selectedUserId || 'all'}.xlsx`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
       } catch (error) {
         console.error('Download failed:', error);
+      } finally {
+        setBrokerDetails(false);
       }
     };
+
     const handleDownloadPaymentDetails = async (saleRequestId) => {
+      const clearedCheques = paymentDetails.filter(p => p.isChequeCleared);
+
+      if (clearedCheques.length === 0) {
+        alert("Cannot generate invoice – no cheques are cleared.");
+        return;
+      }
+
+      setDownload(true);
       try {
         const response = await fetch(`${API_BASE_URL}/api/project/requests/${saleRequestId}/payment/download`, {
           method: 'GET',
@@ -480,41 +511,63 @@ const [chequeStatusFilter, setChequeStatusFilter] = useState('all'); // 'all', '
             Authorization: `Bearer ${token}`, // Replace with actual token if needed
           },
         });
-    
+
         if (!response.ok) {
           throw new Error('Failed to download file');
         }
-    
+
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `payment_details_${saleRequestId}.xlsx`;
+        a.download = `payment_details_${saleRequestId}.pdf`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
       } catch (error) {
         console.error('Download failed:', error);
+      } finally {
+        setDownload(false);
       }
     };
-    
+
     const handleOpenPaymentModal = async (request) => {
       setCurrentRequest(request);
-      setPaymentDetails(request.paymentDetails || []);
+      // Ensure we always have an array and format dates properly
+      setPaymentDetails((request.paymentDetails || []).map(p => ({
+        ...p,
+        date: p.date ? p.date.split('T')[0] : '', // Format for date inputs
+        nextPaymentDate: p.nextPaymentDate ? p.nextPaymentDate.split('T')[0] : ''
+      })));
       setIsPaymentModalOpen(true);
     };
-    
+    const updateRequestInCategory = (updatedRequest) => {
+      setSaleRequests(prev => {
+        const categoryKey = Object.keys(prev).find(key => 
+          prev[key].some(req => req._id === updatedRequest._id)
+        );
+        
+        if (!categoryKey) return prev;
+        
+        return {
+          ...prev,
+          [categoryKey]: prev[categoryKey].map(request => 
+            request._id === updatedRequest._id ? updatedRequest : request
+          )
+        };
+      });
+    };
+
     const handleAddPayment = async (newPayment) => {
       try {
         const token = localStorage.getItem("token");
         
-        // Prepare the payment data (convert date to ISO string)
         const paymentToAdd = {
           ...newPayment,
-          date: new Date(newPayment.date).toISOString()
+          date: newPayment.date ? new Date(newPayment.date).toISOString() : null,
+          nextPaymentDate: newPayment.nextPaymentDate ? new Date(newPayment.nextPaymentDate).toISOString() : null
         };
     
-        // Note: Using PUT not POST, and singular "payment" endpoint
         const response = await fetch(
           `${API_BASE_URL}/api/project/requests/${currentRequest._id}/payment`,
           {
@@ -523,7 +576,6 @@ const [chequeStatusFilter, setChequeStatusFilter] = useState('all'); // 'all', '
               "Content-Type": "application/json",
               Authorization: `Bearer ${token}`
             },
-            // Send as an array with the new payment
             body: JSON.stringify({
               paymentDetails: [paymentToAdd]
             })
@@ -537,69 +589,90 @@ const [chequeStatusFilter, setChequeStatusFilter] = useState('all'); // 'all', '
     
         const data = await response.json();
         
-        // Update local state with the returned payments
-        setPaymentDetails(data.updatedPayments.map(p => ({
+        const formattedPayments = data.updatedPayments.map(p => ({
           ...p,
-          date: p.date ? p.date.split('T')[0] : '' // Convert back to input format
-        })));
-        setPaymentDetails(data.updatedPayments);
+          date: p.date ? p.date.split('T')[0] : '',
+          nextPaymentDate: p.nextPaymentDate ? p.nextPaymentDate.split('T')[0] : ''
+        }));
         
-        // Reset new payment form
+        setPaymentDetails(formattedPayments);
+        
+        // Update parent state if updateRequestInCategory exists
+        if (typeof updateRequestInCategory === 'function') {
+          updateRequestInCategory({
+            ...currentRequest,
+            paymentDetails: formattedPayments
+          });
+        }
+    
         setNewPayment({
           chequeNumber: '',
           date: new Date().toISOString().split('T')[0],
           amount: '',
-          bankName: ''
+          bankName: '',
+          percentagePaid: 0,
+          nextPaymentDate: '',
+          remarks: '',
+          isChequeCleared: false
         });
     
       } catch (error) {
-        console.error("Error adding payment:", {
-          error,
-          currentRequestId: currentRequest._id,
-          payment: newPayment
-        });
+        console.error("Error adding payment:", error);
         alert(`Failed to add payment: ${error.message}`);
       }
     };
-    
+
     const handleUpdatePayment = async (index, updatedPayment) => {
       try {
         const paymentId = paymentDetails[index]._id;
         const token = localStorage.getItem("token");
-        
-        // Debug: Log the URL being called
-        const url = `${API_BASE_URL}/api/project/${currentRequest._id}/payments/${paymentId}`;
-        console.log("Attempting to call:", url);
     
-        const response = await fetch(url, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`
-          },
-          body: JSON.stringify(updatedPayment)
-        });
+        const paymentToUpdate = {
+          ...updatedPayment,
+          date: updatedPayment.date ? new Date(updatedPayment.date).toISOString() : null,
+          nextPaymentDate: updatedPayment.nextPaymentDate ? new Date(updatedPayment.nextPaymentDate).toISOString() : null
+        };
     
-        // Debug: Log the full response
-        console.log("Response status:", response.status);
+        const response = await fetch(
+          `${API_BASE_URL}/api/project/${currentRequest._id}/payments/${paymentId}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify(paymentToUpdate)
+          }
+        );
+    
         if (!response.ok) {
           const errorData = await response.json();
-          console.error("Error details:", errorData);
           throw new Error(errorData.message || 'Failed to update payment');
         }
     
         const data = await response.json();
-        console.log("Update successful:", data);
         
-        // Update the frontend state with the response from backend
-        setPaymentDetails(prev => {
-          const updated = [...prev];
-          updated[index] = data.updatedPayment; // Use the updated data from backend
-          return updated;
-        });
+        const updatedPaymentData = {
+          ...data.updatedPayment,
+          date: data.updatedPayment.date ? data.updatedPayment.date.split('T')[0] : '',
+          nextPaymentDate: data.updatedPayment.nextPaymentDate ? data.updatedPayment.nextPaymentDate.split('T')[0] : ''
+        };
+    
+        const updatedPayments = [...paymentDetails];
+        updatedPayments[index] = updatedPaymentData;
+        setPaymentDetails(updatedPayments);
         setEditingPaymentIndex(null);
+    
+        // Update parent state if updateRequestInCategory exists
+        if (typeof updateRequestInCategory === 'function') {
+          updateRequestInCategory({
+            ...currentRequest,
+            paymentDetails: updatedPayments
+          });
+        }
+    
       } catch (error) {
-        console.error("Full error details:", error);
+        console.error("Error updating payment:", error);
         alert(`Update failed: ${error.message}`);
       }
     };
@@ -612,58 +685,84 @@ const [chequeStatusFilter, setChequeStatusFilter] = useState('all'); // 'all', '
             Authorization: `Bearer ${token}`,
           },
         });
-    
+
         if (!response.ok) {
           throw new Error('Failed to delete payment');
         }
-    
+
         // Update the frontend state to remove the deleted payment
         setPaymentDetails(prev => prev.filter(payment => payment._id !== paymentId));
-    
+        if (typeof updateRequestInCategory === 'function') {
+          updateRequestInCategory({
+            ...currentRequest,
+            paymentDetails: paymentDetails.filter(p => p._id !== paymentId)
+          });
+        }
+
         alert("Payment deleted successfully");
       } catch (error) {
         console.error("Error deleting payment:", error);
         alert(`Delete failed: ${error.message}`);
       }
     };
-    
-    
-    
-  
 
 
+
+
+
+    
 
 
     const renderTable = (category) => {
       const requests = saleRequests[category.toLowerCase()] || [];
+      
 
       // Apply search filter
       const filteredRequests = requests.filter((request) => {
         const customerName = request.customerName || request.inventoryId?.customerName || '';
-  
-  // Search filter - now uses the correct name
-  const matchesSearch = customerName.toLowerCase().includes(requestSearchTerm.toLowerCase());
-        
+
+        // Search filter
+        const matchesSearch = customerName.toLowerCase().includes(requestSearchTerm.toLowerCase());
+
         // Broker filter
         const matchesBroker = !selectedBrokerFilter || request.createdBy?._id === selectedBrokerFilter;
-        
+
         // Cheque status filter (only for Approved tab)
         let matchesChequeStatus = true;
         if (category === 'Approved' && chequeStatusFilter !== 'all') {
           const hasPendingCheques = request.paymentDetails?.some(payment => !payment.isChequeCleared);
-          matchesChequeStatus = chequeStatusFilter === 'pending' 
-            ? hasPendingCheques 
+          matchesChequeStatus = chequeStatusFilter === 'pending'
+            ? hasPendingCheques
             : !hasPendingCheques;
         }
-        
-        return matchesSearch && matchesBroker && matchesChequeStatus;
+
+        // Brokerage status filter
+        const totalPercentagePaid = (request.paymentDetails || []).reduce(
+          (total, payment) => total + (Number(payment.percentagePaid) || 0),
+          0
+        );
+        const isPendingBrokerage = !request.brokerageDetails?.isBrokerageComplete;
+        const isPaidBrokerage = request.brokerageDetails?.isBrokerageComplete;
+
+        let matchesBrokerageStatus = true;
+        if (category === 'Approved') {
+          if (showPendingBrokerageOnly === 'pending') {
+            matchesBrokerageStatus = totalPercentagePaid >= 40 && isPendingBrokerage;
+          } else if (showPendingBrokerageOnly === 'paid') {
+            matchesBrokerageStatus = isPaidBrokerage;
+          }
+        }
+
+        return matchesSearch && matchesBroker && matchesChequeStatus && matchesBrokerageStatus;
       });
-    
+
+
 
       // Apply pagination
       const totalPages = Math.ceil(filteredRequests.length / requestItemsPerPage);
       const startIndex = (requestPage - 1) * requestItemsPerPage;
       const currentRequests = filteredRequests.slice(startIndex, startIndex + requestItemsPerPage);
+
       if (currentRequests.length === 0) {
         return (
           <p className="text-center text-gray-500 py-10">
@@ -671,100 +770,266 @@ const [chequeStatusFilter, setChequeStatusFilter] = useState('all'); // 'all', '
           </p>
         );
       }
+      const formatDate = (dateString) => {
+        if (!dateString) return "N/A";
+        return new Intl.DateTimeFormat("en-GB", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        }).format(new Date(dateString));
+      };
+      const updateRequestInCategory = (updatedRequest) => {
+        setSaleRequests(prev => {
+          // Find which category the request belongs to
+          const categoryKey = Object.keys(prev).find(key =>
+            prev[key].some(req => req._id === updatedRequest._id)
+          );
+
+          if (!categoryKey) return prev;
+
+          return {
+            ...prev,
+            [categoryKey]: prev[categoryKey].map(request => {
+              if (request._id === updatedRequest._id) {
+                // Find the existing request to preserve broker objects
+                const existingRequest = prev[categoryKey].find(r => r._id === updatedRequest._id);
+
+                return {
+                  ...updatedRequest, // New data from API
+                  // Preserve the full broker objects if they exist
+                  inventoryId: existingRequest?.inventoryId || request.inventoryId,
+                  createdBy: existingRequest?.createdBy || updatedRequest.createdBy,
+                  mainBroker: updatedRequest.mainBroker || existingRequest?.mainBroker,
+                };
+              }
+              return request;
+            })
+          };
+        });
+      };
       
+
+
 
       return (
         <>
           {currentRequests.length > 0 ? (
-            <table className="table-auto bg-white border border-b-gray-950 border-collapse rounded-md shadow-xl text-center w-full mt-2">
+
+            <table className="table-auto bg-white border border-b-gray-950 border-collapse rounded-md shadow-xl text-center w-full mt-2 ">
               <thead className="border border-b-gray-950">
                 <tr>
                   <th className="px-4 py-2">Broker</th>
+                  <th className="px-4 py-2">Main Broker</th>
+                  {category === 'Approved' && <th className="px-4 py-2">Brokerage</th>}
                   <th className="px-4 py-2">Customer</th>
                   <th className="px-4 py-2">Unit</th>
                   <th className="px-4 py-2">Floor</th>
                   <th className="px-4 py-2">Status</th>
+                  {category === 'Approved' && <th className="px-4 py-2">Paid %</th>}
+                  {category === 'Approved' && <th className="px-4 py-2">BBA</th>}
                   {category === 'Approved' && <th className="px-4 py-2">Cheques</th>}
-
                   {category === 'Approved' && <th className="px-4 py-2">Edit Payment</th>}
                   {category === 'Pending' && <th className="px-4 py-2">Actions</th>}
                   <th className="text-center px-4 py-2">Download</th>
-                  
+
                 </tr>
               </thead>
               <tbody>
                 {currentRequests.map((request) => {
 
+                  const totalPercentage = request.paymentDetails?.reduce(
+                    (total, payment) => total + (Number(payment.percentagePaid) || 0),
+                    0
+                  );
 
-                const pendingCheques = request.paymentDetails?.filter(
-                  payment => !payment.isChequeCleared
-                ).length || 0;
+
+                  const pendingCheques = request.paymentDetails?.filter(
+                    payment => !payment.isChequeCleared
+                  ).length || 0;
                   return (
-                  <tr key={request._id}>
-                    <td className="px-4 py-4">{request.createdBy.name || 'Loading...'}</td>
-                    <td className="px-4 py-4">{request.customerName || request.inventoryId?.customerName || 'No Customer'}</td>
-                    <td className="px-4 py-4">{request.inventoryId.unitNumber || 'No Unit '}</td>
-                    <td className="px-4 py-4">{request.inventoryId.floor || 'No Floor '}</td>
-                    <td className="px-4 py-4">{request.status}</td>
-                    {request.status === 'Approved' && (
-                    <td className="px-4 py-4">
-                      <span className={`inline-block px-2 py-1 rounded-full text-xs font-semibold ${
-                        pendingCheques > 0 ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'
-                      }`}>
-                        {pendingCheques} pending
-                      </span>
-                    </td>
-                    )}
-                    {request.status === 'Approved' && (
-                    <td 
-                      onClick={() => handleOpenPaymentModal(request)}
-                      className="px-4 py-4 flex justify-center items-center mt-[10px]"
-                    >
-                      <FiEdit/>
-                    </td>
-                    )}
-                    
-                    {request.status === 'Pending' && (
-                      <td className="text-center px-4 py-4">
-                        <button
-                          onClick={() => handleApproveClick(request)}
-                          className="bg-green-500 rounded-lg shadow-xl text-sm text-white lg:mb-0 lg:mr-2 lg:px-3 lg:py-1 lg:text-base mb-2 px-1 py-1"
+                    <tr key={request._id}>
+                      <td className="px-4 py-4">{typeof request.createdBy === 'object'
+                        ? request.createdBy.name
+                        : users.find(u => u._id === request.createdBy)?.name || 'Loading...'}</td>
+                      <td className="px-4 py-4">{request?.mainBroker?.name || 'Not Selected'}</td>
+                      {request.status === 'Approved' && (
+                        <td className="px-4 py-4">
+                          {(() => {
+                            const paymentDetails = request.paymentDetails || [];
+                            const totalPercentagePaid = paymentDetails
+                            .filter(payment => payment.isChequeCleared)
+                            .reduce((total, payment) => total + (Number(payment.percentagePaid) || 0), 0);
+
+
+                            const isBbaPaid = request.brokerageDetails?.bba;
+                            const isBrokerageComplete = request.brokerageDetails?.isBrokerageComplete;
+
+                            if (isBrokerageComplete) {
+                              return <span className="text-blue-600 font-semibold">Paid</span>;
+                            } else if (totalPercentagePaid >= 40 && isBbaPaid) {
+                              return <span className="text-green-600 font-semibold">Due</span>;
+                            } else if (totalPercentagePaid >= 40 && isBbaPaid && !isBrokerageComplete) {
+                              return <span className="text-yellow-600 font-semibold">Not Paid</span>;
+                            } else {
+                              return <span className="text-red-500 font-medium">Not Due</span>;
+                            }
+                          })()}
+                        </td>
+
+                      )}
+
+
+                      <td className="px-4 py-4">{request.customerName || request.inventoryId?.customerName || 'No Customer'}</td>
+
+                      <td className="px-4 py-4">{request.inventoryId.unitNumber || 'No Unit '}</td>
+                      <td className="px-4 py-4">{request.inventoryId.floor || 'No Floor '}</td>
+                      <td className="px-4 py-4">{request.status}</td>
+                      {request.status === 'Approved' && (
+                        <td className="px-4 py-4 text-center font-semibold">
+                          {(() => {
+                            const paymentDetails = request.paymentDetails || [];
+
+                            const clearedPayments = paymentDetails.filter(
+                              (payment) => payment.isChequeCleared === true
+                            );
+
+                            const totalPercentage = clearedPayments.reduce(
+                              (total, payment) => total + (Number(payment.percentagePaid) || 0),
+                              0
+                            );
+
+                            return (
+                              <span
+                                className={`px-2 py-1 rounded-lg text-white ${totalPercentage >= 100
+                                    ? 'bg-green-500'
+                                    : totalPercentage >= 40
+                                      ? 'bg-yellow-500'
+                                      : 'bg-red-500'
+                                  }`}
+                              >
+                                {totalPercentage}%
+                              </span>
+                            );
+                          })()}
+                        </td>
+                      )}
+
+                      {request.status === 'Approved' && (
+                        <td className="px-4 py-4">{request.brokerageDetails.bba ? "Paid" : "Not Paid"}</td>
+                      )}
+
+                      {request.status === 'Approved' && (
+                        <td className="px-4 py-4">
+                          <span className={`inline-block px-2 py-1 rounded-full text-xs font-semibold ${pendingCheques > 0 ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'
+                            }`}>
+                            {pendingCheques} pending
+                          </span>
+                        </td>
+                      )}
+                      {request.status === 'Approved' && (
+                        <td
+                          onClick={() => handleOpenPaymentModal(request)}
+                          className="px-4 py-4 cursor-pointer  text-center"
                         >
-                          Approve
-                        </button>
-                        <button
-                          onClick={() => handleAction(request._id, 'reject')}
-                          className="bg-red-500 rounded-lg shadow-xl text-sm text-white lg:px-3 lg:text-base px-1 py-1"
+
+                          <div className="flex justify-center">
+                            <FiEdit />
+                          </div>
+                        </td>
+                      )}
+
+                      {request.status === 'Pending' && (
+                        <td className="text-center px-4 py-4">
+                          <button
+                            onClick={() => handleApproveClick(request)}
+                            className="bg-green-500 rounded-lg shadow-xl text-sm text-white lg:mb-0 lg:mr-2 lg:px-3 lg:py-1 lg:text-base mb-2 px-1 py-1"
+                          >
+                            Approve
+                          </button>
+                          <button
+                            onClick={() => handleAction(request._id, 'reject')}
+                            className="bg-red-500 rounded-lg shadow-xl text-sm text-white lg:px-3 lg:text-base px-1 py-1"
+                          >
+                            Reject
+                          </button>
+                        </td>
+                      )}
+                      {request.status === 'Pending' && (
+                        <td className="px-3 py-4 flex flex-col">
+                        <a
+                          href={`${API_BASE_URL}/${request.inventoryId.chequeImagePath}`}
+                          download
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className='text-blue-800 hover:text-blue-500'
                         >
-                          Reject
-                        </button>
-                      </td>
-                    )}
-                    <td className="px-3 py-4">
-                      <a
-                        href={`${API_BASE_URL}/${request.inventoryId.chequeImagePath}`}
-                        download
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <button className="bg-gray-500 rounded-lg shadow-xl text-sm text-white lg:mb-0 lg:me-4 lg:px-3 lg:text-base mb-2 px-1 py-1">
                           Cheque
-                        </button>
-                      </a>
-                      <a
-                        href={`${API_BASE_URL}/${request.inventoryId.panCardImagePath}`}
-                        download
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <button className="bg-gray-500 rounded-lg shadow-xl text-sm text-white lg:px-3 lg:text-base px-1 py-1">
-                          Pan Card
-                        </button>
-                      </a>
-                    </td>
-                  {  request.status === 'Approved' && <td onClick={() => handleEditClick(request._id)} className="px-4 py-4 cursor-pointer"><FiEdit/></td>
-                  }
-                  </tr>
+                        </a>
+                        <a
+                          href={`${API_BASE_URL}/${request.inventoryId.panCardImagePath}`}
+                          download
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className='text-blue-800 hover:text-blue-500'
+                        >
+                         
+                            Pan Card
+                          
+                        </a>
+                      </td>
+                      )}  
+                      
+                      {request.status === 'Approved' && (
+                      <td className="px-3 py-4 flex flex-col">
+                        <a
+                          href={`${API_BASE_URL}/${request.chequeImagePath}`}
+                          download
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className='text-blue-800 hover:text-blue-500'
+                        >
+                          Cheque
+                        </a>
+                        <a
+                          href={`${API_BASE_URL}/${request.panCardImagePath}`}
+                          download
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className='text-blue-800 hover:text-blue-500'
+                        >
+                         
+                            Pan Card
+                          
+                        </a>
+                      </td>
+                      )}
+                      {request.status === 'Rejected' && (
+                      <td className="px-3 py-4 flex flex-col">
+                        <a
+                          href={`${API_BASE_URL}/${request.chequeImagePath}`}
+                          download
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className='text-blue-800 hover:text-blue-500'
+                        >
+                          Cheque
+                        </a>
+                        <a
+                          href={`${API_BASE_URL}/${request.panCardImagePath}`}
+                          download
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className='text-blue-800 hover:text-blue-500'
+                        >
+                         
+                            Pan Card
+                          
+                        </a>
+                      </td>
+                      )}
+                      {request.status === 'Approved' && <td onClick={() => handleEditClick(request._id)} className="px-4 py-4 cursor-pointer"><FiEdit /></td>
+                      }
+                    </tr>
                   );
                 })}
               </tbody>
@@ -773,106 +1038,132 @@ const [chequeStatusFilter, setChequeStatusFilter] = useState('all'); // 'all', '
             <p className="px-10 py-10">No {category.toLowerCase()} requests.</p>
           )}
 
-          {showSaleEditForm && <RequestEditForm requestId={saleRequestId} closeForm={() => setShowSaleEditForm(false)} />}
+          {showSaleEditForm && <RequestEditForm onUpdate={updateRequestInCategory} requestId={saleRequestId} closeForm={() => setShowSaleEditForm(false)} />}
           {isPaymentModalOpen && (
-  <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
-    <div className="bg-white p-6 rounded-lg shadow-lg w-[90%] max-w-2xl max-h-[90vh] overflow-y-auto">
-      {/* Modal Header */}
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">
-          Payment Details for {currentRequest?.inventoryId?.customerName || 'Customer'}
-        </h2>
-        <button 
-          onClick={() => {
-            
-            setIsPaymentModalOpen(false);
-            setEditingPaymentIndex(null);
-            window.location.reload();
-          }} 
-          className="text-red-500 font-bold text-xl"
-        >
-          <FiSave/>
-        </button>
-      </div>
+            <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
+              <div className="bg-white px-6 pb-6 rounded-lg shadow-lg w-[90%] max-w-2xl max-h-[90vh] overflow-y-auto">
+                {/* Modal Header */}
+                <div className="flex justify-between pt-6 items-center sticky top-0 z-10 bg-white mb-4">
+                  <h2 className="text-xl font-semibold">
+                    Payment Details for {currentRequest?.inventoryId?.customerName || 'Customer'}
+                  </h2>
 
-      {/* Existing Payments */}
-      <div className="mb-6">
-        <div className='flex relative w-full mb-2 justify-between items-center'>
-          <h3 className="text-lg font-medium ">Existing Payments</h3>
-          <button onClick={() => handleDownloadPaymentDetails(currentRequest?._id)} className='px-2 py-1 font-semibold bg-yellow-500 rounded-lg'>
-            Download Payment History
-          </button>
-        </div>  
-        {paymentDetails.length === 0 ? (
-          <p className="text-gray-500">No payment records found</p>
-        ) : (
-          <div className="space-y-3 relative">
-            {paymentDetails.map((payment, index) => (
-              <div key={payment._id || index} className="border p-3 rounded-lg relative">
-                {editingPaymentIndex === index ? (
+
+                  <button
+                    onClick={() => {
+
+                      setIsPaymentModalOpen(false);
+                      setEditingPaymentIndex(null);
+                    }}
+                    className="text-red-500 font-bold text-xl"
+                  >
+                    <RxCross2 />
+                  </button>
+                </div>
+
+                {/* Existing Payments */}
+                <div className="mb-6">
+                  <div className='flex relative w-full mb-2 justify-between items-center'>
+                    <h3 className="text-lg font-medium ">Existing Payments</h3>
+                    <p className=''>Base Price : {currentRequest?.basePrice}</p>
+                    <button disabled={download} onClick={() => handleDownloadPaymentDetails(currentRequest?._id)} className='px-2 py-1 font-semibold bg-yellow-500 rounded-lg'>
+                      { download ? "Creating Invoice..." : "Download Invoice"}
+                    </button>
+                  </div>
+                  {paymentDetails.length === 0 ? (
+                    <p className="text-gray-500">No payment records found</p>
+                  ) : (
+                    <div className="space-y-3 relative">
+                      <div className="mb-2  text-sm font-semibold text-green-600">
+                        Total Percentage Paid:{" "}
+                        {paymentDetails
+                          .filter((payment) => payment.isChequeCleared)
+                          .reduce((total, payment) => total + (Number(payment.percentagePaid) || 0), 0)}%
+
+                      </div>
+                      {paymentDetails.map((payment, index) => (
+                        <div key={payment._id || index} className="border p-3 rounded-lg relative">
+                          {editingPaymentIndex === index ? (
+                            <PaymentForm
+                              payment={payment}
+                              onSave={(updatedPayment) => handleUpdatePayment(index, updatedPayment)}
+                              onCancel={() => setEditingPaymentIndex(null)}
+                            />
+                          ) : (
+                            <>
+                              <div className="grid grid-cols-4 gap-2 relative">
+                                <div>
+                                  <p className="text-sm font-medium">Cheque/UTR No:</p>
+                                  <p>{payment.chequeNumber || '-'}</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium">Amount:</p>
+                                  <p>{payment.amount || '-'}</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium">Bank:</p>
+                                  <p>{payment.bankName || '-'}</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium">Date:</p>
+                                  <p>{payment.date ? formatDate(payment.date) : '-'}</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium">Payment Status</p>
+                                  <p>{payment.isChequeCleared ? "Cleared" : 'Not Cleared'}</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium">Next Date:</p>
+                                  <p>{payment.nextPaymentDate ? formatDate(payment.nextPaymentDate) : '-'}</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium">Payment Percentage:</p>
+                                  <p>{payment.percentagePaid || '-'}</p>
+                                </div>
+
+                              </div>
+                              <div className='mt-2 w-full'>
+                                <p className="text-sm font-medium">Remarks:</p>
+                                <p>{payment.remarks || '-'}</p>
+                              </div>
+                              <div className="absolute top-2 right-2 flex gap-2">
+                                <button onClick={() => setEditingPaymentIndex(index)} className="text-blue-500">
+                                  <FiEdit />
+                                </button>
+                                <button onClick={() => handleDeletePayment(currentRequest._id, payment._id)} className="text-red-500">
+                                  <FiTrash />
+                                </button>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Add New Payment */}
+                <div className="mt-6">
+                  <h3 className="text-xl font-medium mb-2">Add New Payment</h3>
                   <PaymentForm
-                    payment={payment}
-                    onSave={(updatedPayment) => handleUpdatePayment(index, updatedPayment)}
-                    onCancel={() => setEditingPaymentIndex(null)}
-                  />
-                ) : (
-                  <>
-                    <div className="grid grid-cols-4 gap-2 relative">
-                      <div>
-                        <p className="text-sm font-medium">Cheque/UTR No:</p>
-                        <p>{payment.chequeNumber || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">Amount:</p>
-                        <p>{payment.amount || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">Bank:</p>
-                        <p>{payment.bankName || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">Date:</p>
-                        <p>{payment.date ? new Date(payment.date).toLocaleDateString() : '-'}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">Payment Status</p>
-                        <p>{payment.isChequeCleared ? "Cleared" : 'Not Cleared'}</p>
-                      </div>
-                    </div>
-                    <div className="absolute top-2 right-2 flex gap-2">
-                      <button onClick={() => setEditingPaymentIndex(index)} className="text-blue-500">
-                        <FiEdit />
-                      </button>
-                      <button onClick={() => handleDeletePayment(currentRequest._id, payment._id)} className="text-red-500">
-                        <FiTrash />
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+                    payment={newPayment}
+                    onSave={handleAddPayment}
+                    onCancel={() => setNewPayment({
+                      chequeNumber: '',
+                      date: new Date().toISOString().split('T')[0],
+                      amount: '',
+                      bankName: ''
+                    })
 
-      {/* Add New Payment */}
-      <div className="mt-6">
-        <h3 className="text-lg font-medium mb-2">Add New Payment</h3>
-        <PaymentForm
-          payment={newPayment}
-          onSave={handleAddPayment}
-          onCancel={() => setNewPayment({
-            chequeNumber: '',
-            date: new Date().toISOString().split('T')[0],
-            amount: '',
-            bankName: ''
-          })}
-        />
-      </div>
-    </div>
-  </div>
-)}  
-          
+
+
+                  }
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
 
           {showApprovalForm && (
             <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-md flex justify-center items-center z-50">
@@ -890,6 +1181,17 @@ const [chequeStatusFilter, setChequeStatusFilter] = useState('all'); // 'all', '
                     value={customerDetails.customerName}
                     onChange={(e) =>
                       setCustomerDetails({ ...customerDetails, customerName: e.target.value })
+                    }
+                    className="w-full border p-2 rounded"
+                  />
+                </label>
+                <label className="block mb-2">
+                  Base Price:
+                  <input
+                    type="number"
+                    value={customerDetails.basePrice || ''}
+                    onChange={(e) =>
+                      setCustomerDetails({ ...customerDetails, basePrice: e.target.value })
                     }
                     className="w-full border p-2 rounded"
                   />
@@ -917,54 +1219,54 @@ const [chequeStatusFilter, setChequeStatusFilter] = useState('all'); // 'all', '
 
                 {/* Customer Info */}
                 <div className='flex flex-row flex-wrap justify-between items-center'>
-                {Object.keys(customerDetails.customerInfo).map((field) => (
-                  <div key={field} className= {`${field === "contactNumber" ? "w-full" : "w-[48%]" } `}>
-                  <label className="block mb-2" key={field}>
-                    {field === "guardianName"
-                      ? "Father Name" // Update label here
-                      : field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, " $1")}:
-                    <input
-                      type={field === "dateOfBirth" ? "date" : field === "age" || field === "pin" ? "number" : "text"}
-                      value={customerDetails.customerInfo[field] || ""}
-                      onChange={(e) =>
-                        setCustomerDetails({
-                          ...customerDetails,
-                          customerInfo: { ...customerDetails.customerInfo, [field]: e.target.value },
-                        })
-                      }
-                      className="w-full border p-2 rounded"
-                    />
-                  </label>
-                  </div>
-                ))}
+                  {Object.keys(customerDetails.customerInfo).map((field) => (
+                    <div key={field} className={`${field === "contactNumber" ? "w-full" : "w-[48%]"} `}>
+                      <label className="block mb-2" key={field}>
+                        {field === "guardianName"
+                          ? "Father Name" // Update label here
+                          : field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, " $1")}:
+                        <input
+                          type={field === "dateOfBirth" ? "date" : field === "age" || field === "pin" ? "number" : "text"}
+                          value={customerDetails.customerInfo[field] || ""}
+                          onChange={(e) =>
+                            setCustomerDetails({
+                              ...customerDetails,
+                              customerInfo: { ...customerDetails.customerInfo, [field]: e.target.value },
+                            })
+                          }
+                          className="w-full border p-2 rounded"
+                        />
+                      </label>
+                    </div>
+                  ))}
                 </div>
 
                 {/* Unit Details */}
                 <div className='flex flex-row justify-between items-center'>
-                {Object.keys(customerDetails.unitDetails)
-                  .filter((field) => field.toLowerCase() !== "unitType")
-                  .map((field) => (
-                    <div key={field} className= {`w-full`}>
-                    <label className="block mb-2" >
-                      {field === "date"
-                        ? "Cheque Date" // Update label here
-                        : field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, " $1")}:
-                      <input
-                        type={field === "unitCost" || field === "otherCharges" ? "number" : "text"}
-                        value={customerDetails.unitDetails[field] || ""}
-                        onChange={(e) =>
-                          setCustomerDetails({
-                            ...customerDetails,
-                            unitDetails: { ...customerDetails.unitDetails, [field]: e.target.value },
-                          })
-                        }
-                        className="w-full border p-2 rounded"
-                      />
-                      
-                    </label>
-                    </div>
-                  ))}
-                  </div>
+                  {Object.keys(customerDetails.unitDetails)
+                    .filter((field) => field.toLowerCase() !== "unitType")
+                    .map((field) => (
+                      <div key={field} className={`w-full`}>
+                        <label className="block mb-2" >
+                          {field === "date"
+                            ? "Cheque Date" // Update label here
+                            : field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, " $1")}:
+                          <input
+                            type={field === "unitCost" || field === "otherCharges" ? "number" : "text"}
+                            value={customerDetails.unitDetails[field] || ""}
+                            onChange={(e) =>
+                              setCustomerDetails({
+                                ...customerDetails,
+                                unitDetails: { ...customerDetails.unitDetails, [field]: e.target.value },
+                              })
+                            }
+                            className="w-full border p-2 rounded"
+                          />
+
+                        </label>
+                      </div>
+                    ))}
+                </div>
 
                 <label className="block mb-2">
                   Broker Name:
@@ -990,39 +1292,6 @@ const [chequeStatusFilter, setChequeStatusFilter] = useState('all'); // 'all', '
                     ))}
                   </select>
                 </label>
-
-
-
-
-                {/* Payment Details */}
-                {/* Payment Details */}
-{/* Payment Details
-<div className="flex flex-row justify-between flex-wrap items-center">
-  {customerDetails.paymentDetails.length > 0 &&
-    Object.keys(customerDetails.paymentDetails[0]).map((field) => (
-      <div key={field} className="w-[48%]">
-        <label className="block mb-2">
-          {field === "date" ? "Cheque Date" : field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, " $1")}:
-          <input
-            type={field === "date" ? "date" : field === "amount" ? "number" : "text"}
-            value={customerDetails.paymentDetails[0][field] || ""}
-            onChange={(e) =>
-              setCustomerDetails({
-                ...customerDetails,
-                paymentDetails: [
-                  {
-                    ...customerDetails.paymentDetails[0],
-                    [field]: e.target.value,
-                  },
-                ],
-              })
-            }
-            className="w-full border p-2 rounded"
-          />
-        </label>
-      </div>
-    ))}
-</div> */}
 
 
 
@@ -1093,50 +1362,69 @@ const [chequeStatusFilter, setChequeStatusFilter] = useState('all'); // 'all', '
 
         {/* Search Bar */}
         <div className="flex justify-end mb-4 gap-4">
-        {selectedCategory === "Approved" && (selectedBrokerFilter || chequeStatusFilter !== 'all') && (
-  <button 
-    onClick={() => {
-      setSelectedBrokerFilter('');
-      setChequeStatusFilter('all');
-    }}
-    className="text-sm text-gray-500 hover:text-gray-700 ml-2"
-  >
-    Clear All Filters
-  </button>
-)}
-        {selectedCategory === "Approved" && (
-        <select
-        value={selectedBrokerFilter}
-        onChange={(e) => setSelectedBrokerFilter(e.target.value)}
-        className="border rounded-lg shadow-sm px-4 py-2"
-      >
-        <option value="">All Brokers</option>
-        {users.map((user) => (
-          <option key={user._id} value={user._id}>
-            {user.name}
-          </option>
-        ))}
-      </select>
-        )}
-        {selectedCategory === "Approved" && (
-        <select
-        value={chequeStatusFilter}
-        onChange={(e) => setChequeStatusFilter(e.target.value)}
-        className="border rounded-lg shadow-sm px-4 py-2"
-      >
-        <option value="all">All Payment</option>
-        <option value="pending">Not Cleared</option>
-        <option value="cleared">Cleared</option>
-      </select>
-        )}
+          {selectedCategory === "Approved" && (selectedBrokerFilter || chequeStatusFilter !== 'all') && (
+            <button
+              onClick={() => {
+                setSelectedBrokerFilter('');
+                setChequeStatusFilter('all');
+              }}
+              className="text-sm text-gray-500 hover:text-gray-700 ml-2"
+            >
+              Clear All Filters
+            </button>
+          )}
+          {selectedCategory === "Approved" && (
+            <select
+              value={selectedBrokerFilter}
+              onChange={(e) => setSelectedBrokerFilter(e.target.value)}
+              className="border rounded-lg shadow-sm px-4 py-2"
+            >
+              <option value="">All Brokers</option>
+              {users.map((user) => (
+                <option key={user._id} value={user._id}>
+                  {user.name}
+                </option>
+              ))}
+            </select>
+          )}
+          {selectedCategory === "Approved" && (
+            <select
+              value={chequeStatusFilter}
+              onChange={(e) => setChequeStatusFilter(e.target.value)}
+              className="border rounded-lg shadow-sm px-4 py-2"
+            >
+              <option value="all">All Payment</option>
+              <option value="pending">Not Cleared</option>
+              <option value="cleared">Cleared</option>
+            </select>
+          )}
 
-        {selectedCategory === "Approved" && (
-          
-  <button onClick={handleDownload} className='px-4 py-2 font-semibold bg-yellow-500 rounded-lg'>
-    Download Broker Details
-  </button>
-)}
-          
+          {selectedCategory === "Approved" && (
+            // 
+
+            <button
+              onClick={handleDownload}
+              className="px-4 py-2 font-semibold bg-yellow-500 text-black rounded-lg hover:bg-yellow-600 transition"
+              disabled={brokerDetails}
+            >
+              {brokerDetails ? "Creating Excel..." : "Download Broker Details"}
+            </button>
+          )}
+
+          {selectedCategory === "Approved" && (
+            <select
+              value={showPendingBrokerageOnly}
+              onChange={(e) => setShowPendingBrokerageOnly(e.target.value)}
+              className="border rounded-lg shadow-sm px-4 py-2"
+            >
+              <option value="all">All Brokerage</option>
+              <option value="pending">Pending Brokerage (≥ 40%)</option>
+              <option value="paid">Paid Brokerage</option>
+            </select>
+          )}
+
+
+
           <input
             type="text"
             placeholder="Search customer..."
@@ -1203,19 +1491,19 @@ const [chequeStatusFilter, setChequeStatusFilter] = useState('all'); // 'all', '
     // If changing to "Sold", ask for confirmation
     if (newStatus === "Sold" && currentStatus !== "Sold") {
       const confirmSale = window.confirm(
-          "Are you sure you want to mark this property as Sold? Once sold, it cannot be changed later."
+        "Are you sure you want to mark this property as Sold? Once sold, it cannot be changed later."
       );
       if (!confirmSale) return;
-      
+
       // Find the inventory item and set it for the sale form
       projectInventories.forEach(project => {
-          const item = project.inventory.find(item => item._id === inventoryId);
-          if (item) {
-              setSelectedInventoryForSale(item);
-          }
+        const item = project.inventory.find(item => item._id === inventoryId);
+        if (item) {
+          setSelectedInventoryForSale(item);
+        }
       });
       return; // Exit here to show the form
-  }
+    }
 
     // Optimistic UI update: immediately reflect the status change in the UI
     setProjectInventories((prevInventories) => {
@@ -1233,7 +1521,7 @@ const [chequeStatusFilter, setChequeStatusFilter] = useState('all'); // 'all', '
     try {
       const response = await fetch(`${API_BASE_URL}/api/project/inventory/${inventoryId}/update-status`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json",'Authorization': `Bearer ${token}`, },
+        headers: { "Content-Type": "application/json", 'Authorization': `Bearer ${token}`, },
         body: JSON.stringify({ status: newStatus }),
       });
 
@@ -1319,13 +1607,13 @@ const [chequeStatusFilter, setChequeStatusFilter] = useState('all'); // 'all', '
     return (
       <div className="py-10">
         {selectedInventoryForSale && (
-            
-                    <SaleForm 
-                        inventory={selectedInventoryForSale}
-                        closeForm={() => setSelectedInventoryForSale(null)}
-                        userId={users._id} // Make sure you have access to user ID
-                    />
-                
+
+          <SaleForm
+            inventory={selectedInventoryForSale}
+            closeForm={() => setSelectedInventoryForSale(null)}
+            userId={users._id} // Make sure you have access to user ID
+          />
+
         )}
         {/* Header */}
         <h2 className="text-2xl text-center font-bold lg:text-4xl mb-6">
@@ -1457,10 +1745,10 @@ const [chequeStatusFilter, setChequeStatusFilter] = useState('all'); // 'all', '
                             onChange={(e) => handleStatusChange(item._id, e.target.value)}
                             disabled={item.status === "Sold"}
                             className={`font-bold  text-center px-2 py-1 rounded ${item.status === "Sold"
-                                ? "text-green-600 cursor-not-allowed bg-gray-200 appearance-none pointer-events-none"
-                                : item.status === "Unsold"
-                                  ? "text-red-600 cursor-pointer"
-                                  : "text-yellow-500 cursor-pointer"
+                              ? "text-green-600 cursor-not-allowed bg-gray-200 appearance-none pointer-events-none"
+                              : item.status === "Unsold"
+                                ? "text-red-600 cursor-pointer"
+                                : "text-yellow-500 cursor-pointer"
                               }`}
                           >
                             <option value="Sold">Sold</option>
@@ -2016,12 +2304,12 @@ const [chequeStatusFilter, setChequeStatusFilter] = useState('all'); // 'all', '
           [field]: value,
         },
       };
-      console.log("Updated Data:",updatedData)
+      console.log("Updated Data:", updatedData)
       return { ...updatedData }; // Ensure new reference
     });
   };
-  
-  
+
+
 
   const toggleVisibleField = (userId, field) => {
     setEditableData((prev) => {
@@ -2064,6 +2352,7 @@ const [chequeStatusFilter, setChequeStatusFilter] = useState('all'); // 'all', '
 
   // Save Updated User Data
   const saveUserChanges = async (userId) => {
+    setUserLoading(true);
     try {
       const originalUser = users.find(user => user._id === userId);
 
@@ -2129,10 +2418,12 @@ const [chequeStatusFilter, setChequeStatusFilter] = useState('all'); // 'all', '
 
       window.location.reload();
 
-      
+
     } catch (error) {
       console.error("Error updating user:", error);
       alert("Update failed.");
+    } finally{
+      setUserLoading(false);
     }
   };
 
@@ -2166,7 +2457,7 @@ const [chequeStatusFilter, setChequeStatusFilter] = useState('all'); // 'all', '
       console.error("Error deleting user:", error);
     }
   };
-  
+
 
 
 
@@ -2363,18 +2654,18 @@ const [chequeStatusFilter, setChequeStatusFilter] = useState('all'); // 'all', '
               />
             </div>
             <div>
-    <label htmlFor="gstNumber" className="text-gray-700 block">GST Number (Optional)</label>
-    <input type="text" id="gstNumber" name="gstNumber" className="border-b border-b-black w-full block focus:outline-none mt-1" />
-  </div>
+              <label htmlFor="gstNumber" className="text-gray-700 block">GST Number (Optional)</label>
+              <input type="text" id="gstNumber" name="gstNumber" className="border-b border-b-black w-full block focus:outline-none mt-1" />
+            </div>
 
-  <div>
-    <label htmlFor="reraNumber" className="text-gray-700 block">RERA Number (Optional)</label>
-    <input type="text" id="reraNumber" name="reraNumber" className="border-b border-b-black w-full block focus:outline-none mt-1" />
-  </div>
             <div>
-            <label htmlFor="email" className="text-gray-700 block">Email (Optional)</label>
-            <input type="email" id="email" name="email" className="border-b border-b-black w-full block focus:outline-none mt-1" />
-          </div>
+              <label htmlFor="reraNumber" className="text-gray-700 block">RERA Number (Optional)</label>
+              <input type="text" id="reraNumber" name="reraNumber" className="border-b border-b-black w-full block focus:outline-none mt-1" />
+            </div>
+            <div>
+              <label htmlFor="email" className="text-gray-700 block">Email (Optional)</label>
+              <input type="email" id="email" name="email" className="border-b border-b-black w-full block focus:outline-none mt-1" />
+            </div>
 
 
             <div className='relative'>
@@ -2528,41 +2819,41 @@ const [chequeStatusFilter, setChequeStatusFilter] = useState('all'); // 'all', '
                       />
                     </div>
                     {/* Email */}
-<div className="mb-2">
-  <label className="text-gray-700 block">Email</label>
-  <input
-    type="email"
-    value={editingUser === user._id ? editableData[user._id]?.email ?? user.email ?? "" : user.email ?? ""}
-    disabled={user._id !== editingUser}
-    onChange={(e) => handleEditChange(user._id, "email", e.target.value)}
-    className={`border-b w-full bg-transparent ${user._id === editingUser ? "border-black" : "border-gray-300"}`}
-  />
-</div>
+                    <div className="mb-2">
+                      <label className="text-gray-700 block">Email</label>
+                      <input
+                        type="email"
+                        value={editingUser === user._id ? editableData[user._id]?.email ?? user.email ?? "" : user.email ?? ""}
+                        disabled={user._id !== editingUser}
+                        onChange={(e) => handleEditChange(user._id, "email", e.target.value)}
+                        className={`border-b w-full bg-transparent ${user._id === editingUser ? "border-black" : "border-gray-300"}`}
+                      />
+                    </div>
 
-{/* GST Number */}
-<div className="mb-2">
-  <label className="text-gray-700 block">GST Number</label>
-  <input
-    type="text"
-    value={editingUser === user._id ? editableData[user._id]?.gstNumber ?? user.gstNumber ?? "" : user.gstNumber ?? ""}
+                    {/* GST Number */}
+                    <div className="mb-2">
+                      <label className="text-gray-700 block">GST Number</label>
+                      <input
+                        type="text"
+                        value={editingUser === user._id ? editableData[user._id]?.gstNumber ?? user.gstNumber ?? "" : user.gstNumber ?? ""}
 
-    disabled={user._id !== editingUser}
-    onChange={(e) => handleEditChange(user._id, "gstNumber", e.target.value)}
-    className={`border-b w-full bg-transparent ${user._id === editingUser ? "border-black" : "border-gray-300"}`}
-  />
-</div>
+                        disabled={user._id !== editingUser}
+                        onChange={(e) => handleEditChange(user._id, "gstNumber", e.target.value)}
+                        className={`border-b w-full bg-transparent ${user._id === editingUser ? "border-black" : "border-gray-300"}`}
+                      />
+                    </div>
 
-{/* RERA Number */}
-<div className="mb-2">
-  <label className="text-gray-700 block">RERA Number</label>
-  <input
-    type="text"
-    value={editingUser === user._id ? editableData[user._id]?.reraNumber ?? user.reraNumber ?? "" : user.reraNumber ?? ""}
-    disabled={user._id !== editingUser}
-    onChange={(e) => handleEditChange(user._id, "reraNumber", e.target.value)}
-    className={`border-b w-full bg-transparent ${user._id === editingUser ? "border-black" : "border-gray-300"}`}
-  />
-</div>
+                    {/* RERA Number */}
+                    <div className="mb-2">
+                      <label className="text-gray-700 block">RERA Number</label>
+                      <input
+                        type="text"
+                        value={editingUser === user._id ? editableData[user._id]?.reraNumber ?? user.reraNumber ?? "" : user.reraNumber ?? ""}
+                        disabled={user._id !== editingUser}
+                        onChange={(e) => handleEditChange(user._id, "reraNumber", e.target.value)}
+                        className={`border-b w-full bg-transparent ${user._id === editingUser ? "border-black" : "border-gray-300"}`}
+                      />
+                    </div>
 
                     {user._id === editingUser && (
                       <div className="mb-2 relative">
@@ -2637,7 +2928,7 @@ const [chequeStatusFilter, setChequeStatusFilter] = useState('all'); // 'all', '
                         onClick={() => saveUserChanges(user._id)}
                         className="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-900"
                       >
-                        Save Changes
+                        { userLoading ? "Saving..." : "Save Changes"}
                       </button>
                     )}
                   </div>
@@ -2750,13 +3041,13 @@ const [chequeStatusFilter, setChequeStatusFilter] = useState('all'); // 'all', '
               >
                 Edit Users<CiEdit />
               </li>
-              <li
+              {/* <li
                 onClick={() => setActiveTab('broker')}
                 className={`text-gray-600 flex flex-row items-center justify-between hover:bg-gray-300 px-2 py-2 rounded cursor-pointer ${activeTab === 'broker' ? 'bg-gray-300' : ''}`}
               >
                 Broker Details<CiEdit />
-              </li>
-              
+              </li> */}
+
             </ul>
           )}
         </div>

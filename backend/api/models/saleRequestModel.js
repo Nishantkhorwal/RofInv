@@ -56,6 +56,7 @@ const saleRequestSchema = new mongoose.Schema({
     unitCost: { type: Number },
     otherCharges: { type: Number },
   },
+  basePrice: { type: Number},
   paymentDetails: [
     {
       chequeNumber: { type: String },
@@ -63,8 +64,17 @@ const saleRequestSchema = new mongoose.Schema({
       amount: { type: Number },
       bankName: { type: String },
       isChequeCleared: { type: Boolean, default: false }, 
+      percentagePaid: { type: Number },         // e.g. 25%
+      nextPaymentDate: { type: Date },          // Schedule tracking
+      remarks: { type: String }, 
     }
-  ]
+  ],
+  brokerageDetails: {
+    totalBrokerage: { type: Number , default  : 0 },
+    isBrokerageComplete: { type: Boolean, default: false },
+    bba: { type: Boolean, default: false },
+  }
+  
 });
 
 const SaleRequest = mongoose.model('SaleRequest', saleRequestSchema);

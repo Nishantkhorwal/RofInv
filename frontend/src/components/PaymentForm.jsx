@@ -1,7 +1,13 @@
 import React, { useState } from 'react';
 
 export const PaymentForm = ({ payment, onSave, onCancel }) => {
-  const [formData, setFormData] = useState({ ...payment });
+  const [formData, setFormData] = useState({
+    ...payment,
+    date: payment?.date ? new Date(payment.date).toISOString().split("T")[0] : "",
+    nextPaymentDate: payment?.nextPaymentDate
+      ? new Date(payment.nextPaymentDate).toISOString().split("T")[0]
+      : "",
+  });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -14,16 +20,19 @@ export const PaymentForm = ({ payment, onSave, onCancel }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     onSave(formData);
+    setFormData({
+      chequeNumber: "",
+      amount: "",
+      bankName: "",
+      date: "",
+      percentagePaid: 0,
+      nextPaymentDate: "",
+      remarks: "",
+      isChequeCleared: false,
+    });
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return "N/A";
-    return new Intl.DateTimeFormat("en-GB", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    }).format(new Date(dateString));
-  };
+  
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
@@ -62,7 +71,7 @@ export const PaymentForm = ({ payment, onSave, onCancel }) => {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Date : {formatDate(formData.date)}</label>
+          <label className="block text-sm font-medium mb-1">Date</label>
           <input
             type="date"
             name="date"
@@ -71,6 +80,28 @@ export const PaymentForm = ({ payment, onSave, onCancel }) => {
             className="w-full border rounded p-2"
           />
         </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1">Next Payment Date</label>
+        <input
+          type="date"
+          name="nextPaymentDate"
+          value={formData.nextPaymentDate}
+          onChange={handleChange}
+          className="w-full border rounded px-3 py-1"
+        />
+      </div>
+
+      <div className="col-span-2">
+        <label className="block text-sm font-medium mb-1">Remarks</label>
+        <textarea
+          name="remarks"
+          value={formData.remarks}
+          onChange={handleChange}
+          className="w-full border rounded px-3 py-1"
+          rows={3}
+        />
       </div>
 
       {/* Dropdown for Payment Status */}
@@ -89,17 +120,10 @@ export const PaymentForm = ({ payment, onSave, onCancel }) => {
 
       <div className="flex justify-end space-x-2">
         <button
-          type="button"
-          onClick={onCancel}
-          className="px-4 py-2 bg-gray-300 rounded"
-        >
-          Cancel
-        </button>
-        <button
           type="submit"
           className="px-4 py-2 bg-blue-500 text-white rounded"
         >
-          Save Payment
+          Create Payment
         </button>
       </div>
     </form>

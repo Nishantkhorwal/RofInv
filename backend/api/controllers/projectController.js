@@ -1,10 +1,13 @@
 import Project from '../models/projectModel.js';
 import Inventory from '../models/inventoryModel.js';
-import path from 'path';
 import SaleRequest from '../models/saleRequestModel.js';
 import { ROFUser } from "../models/userModel.js";
 import ExcelJS from 'exceljs';
 import mongoose from 'mongoose';
+
+import puppeteer from 'puppeteer';
+import fs from 'fs';
+import path from 'path';
 
 
 // Controller to create a project with its inventory
@@ -354,7 +357,7 @@ export const handleSaleRequest = async (req, res, io) => {
     chequeImagePath, 
     customerInfo, 
     unitDetails, 
-  
+    basePrice,
     mainBroker 
   } = req.body; // Allow admins to update these fields
 
@@ -395,6 +398,7 @@ export const handleSaleRequest = async (req, res, io) => {
       }
       saleRequest.customerInfo = customerInfo;
       saleRequest.unitDetails = unitDetails;
+      saleRequest.basePrice = basePrice;
       if (mainBroker) {
         saleRequest.mainBroker = mainBroker;
       }
@@ -432,13 +436,26 @@ export const handleSaleRequest = async (req, res, io) => {
   }
 };
 
+const recalculatePercentages = (payments, basePrice) => {
+  return payments.map(payment => {
+    const amount = parseFloat(payment.amount || 0);
+    const percentagePaid = basePrice > 0 ? (amount / basePrice) * 100 : 0;
+    return {
+      ...payment,
+      percentagePaid: parseFloat(percentagePaid.toFixed(2))
+    };
+  });
+};
 
 
 // edit customer details
 
 export const editSaleRequestCustomerDetails = async (req, res) => {
   const { requestId } = req.params;
-  const { customerName, customerInfo, unitDetails,  mainBroker } = req.body;
+  const { customerName, customerInfo, unitDetails,  mainBroker, basePrice, brokerageDetails  } = req.body;
+
+  const panCardImagePath = req.files?.panCardImage?.[0]?.path.replace(/\\/g, '/') || null;
+  const chequeImagePath = req.files?.chequeImage?.[0]?.path.replace(/\\/g, '/') || null;
 
   try {
     // Find the sale request
@@ -459,6 +476,28 @@ export const editSaleRequestCustomerDetails = async (req, res) => {
     }
     if (mainBroker) {
       saleRequest.mainBroker = mainBroker;
+    }
+    if (basePrice !== undefined) {
+      saleRequest.basePrice = basePrice;
+    
+      // Recalculate all existing payment percentages
+      if (saleRequest.paymentDetails.length > 0) {
+        saleRequest.paymentDetails = recalculatePercentages(saleRequest.paymentDetails, basePrice);
+      }
+    }
+
+    if (brokerageDetails) {
+      saleRequest.brokerageDetails = {
+        ...saleRequest.brokerageDetails,
+        ...brokerageDetails,
+      };
+    }
+    if (panCardImagePath) {
+      saleRequest.panCardImagePath = panCardImagePath;
+    }
+
+    if (chequeImagePath) {
+      saleRequest.chequeImagePath = chequeImagePath;
     }
 
     // Save changes
@@ -509,7 +548,7 @@ export const getSaleRequests = async (req, res) => {
 
 export const updateInventoryStatusWithRequestHandling = async (req, res, io) => {
   const { inventoryId } = req.params;
-  const { status, customerName, customerInfo, unitDetails, mainBroker } = req.body;
+  const { status, customerName, customerInfo, unitDetails, mainBroker, basePrice } = req.body;
   const userRole = req.user?.role;
 
   const panCardImagePath = req.files?.panCardImage ? req.files.panCardImage[0].path.replace(/\\/g, '/') : null;
@@ -564,6 +603,7 @@ export const updateInventoryStatusWithRequestHandling = async (req, res, io) => 
           customerInfo,
           unitDetails,
           mainBroker,
+          basePrice
         });
 
         await saleRequest.save();
@@ -602,12 +642,79 @@ export const updateInventoryStatusWithRequestHandling = async (req, res, io) => 
  * Handles bulk payment operations (add/update)
  * PUT /api/project/requests/:requestId/payments
  */
+// export const updatePaymentDetails = async (req, res) => {
+//   try {
+//     const { requestId } = req.params;
+//     const { paymentDetails } = req.body;
+
+//     // Validate input
+//     if (!Array.isArray(paymentDetails)) {
+//       return res.status(400).json({ 
+//         success: false, 
+//         message: "Payment details must be an array" 
+//       });
+//     }
+
+//     const saleRequest = await SaleRequest.findById(requestId);
+//     if (!saleRequest) {
+//       return res.status(404).json({ 
+//         success: false, 
+//         message: "Sale request not found" 
+//       });
+//     }
+
+//     const basePrice = parseFloat(saleRequest.basePrice || 0);
+
+//     // Process each payment
+//     paymentDetails.forEach(newPayment => {
+//       const paymentAmount = parseFloat(newPayment.amount);
+
+//       if (!isNaN(paymentAmount) && basePrice > 0) {
+//         const calculatedPercentage = (paymentAmount / basePrice) * 100;
+//         newPayment.percentagePaid = parseFloat(calculatedPercentage.toFixed(2));
+//       }
+//       if (newPayment._id) {
+//         // Update existing payment
+//         const index = saleRequest.paymentDetails.findIndex(
+//           p => p._id.toString() === newPayment._id
+//         );
+//         if (index !== -1) {
+//           saleRequest.paymentDetails[index] = {
+//             ...saleRequest.paymentDetails[index],
+//             ...newPayment
+//           };
+//         }
+//       } else {
+//         // Add new payment
+//         saleRequest.paymentDetails.push({
+//           ...newPayment,
+//           _id: new mongoose.Types.ObjectId() // Generate new ID
+//         });
+//       }
+//     });
+
+//     await saleRequest.save();
+
+//     return res.status(200).json({
+//       success: true,
+//       message: "Payments processed successfully",
+//       updatedPayments: saleRequest.paymentDetails
+//     });
+//   } catch (error) {
+//     console.error("Payment processing error:", error);
+//     return res.status(500).json({ 
+//       success: false, 
+//       message: "Server error processing payments" 
+//     });
+//   }
+// };
+
+
 export const updatePaymentDetails = async (req, res) => {
   try {
     const { requestId } = req.params;
     const { paymentDetails } = req.body;
 
-    // Validate input
     if (!Array.isArray(paymentDetails)) {
       return res.status(400).json({ 
         success: false, 
@@ -623,28 +730,53 @@ export const updatePaymentDetails = async (req, res) => {
       });
     }
 
-    // Process each payment
-    paymentDetails.forEach(newPayment => {
+    const basePrice = parseFloat(saleRequest.basePrice || 0);
+
+    let totalPaidPercentage = 0;
+
+    // Clone existing payments
+    const updatedPayments = [...saleRequest.paymentDetails];
+
+    for (const newPayment of paymentDetails) {
+      const paymentAmount = parseFloat(newPayment.amount);
+
+      if (!isNaN(paymentAmount) && basePrice > 0) {
+        const calculatedPercentage = (paymentAmount / basePrice) * 100;
+        newPayment.percentagePaid = parseFloat(calculatedPercentage.toFixed(2));
+      } else {
+        newPayment.percentagePaid = 0;
+      }
+
       if (newPayment._id) {
-        // Update existing payment
-        const index = saleRequest.paymentDetails.findIndex(
+        const index = updatedPayments.findIndex(
           p => p._id.toString() === newPayment._id
         );
         if (index !== -1) {
-          saleRequest.paymentDetails[index] = {
-            ...saleRequest.paymentDetails[index],
+          updatedPayments[index] = {
+            ...updatedPayments[index],
             ...newPayment
           };
         }
       } else {
-        // Add new payment
-        saleRequest.paymentDetails.push({
+        updatedPayments.push({
           ...newPayment,
-          _id: new mongoose.Types.ObjectId() // Generate new ID
+          _id: new mongoose.Types.ObjectId()
         });
       }
-    });
+    }
 
+    // Calculate total percentage after merging all payments
+    totalPaidPercentage = updatedPayments.reduce((sum, p) => sum + (parseFloat(p.percentagePaid) || 0), 0);
+
+    if (totalPaidPercentage > 100) {
+      return res.status(400).json({
+        success: false,
+        message: `Total paid percentage exceeds 100%. Currently at ${totalPaidPercentage.toFixed(2)}%.`
+      });
+    }
+
+    // If valid, save the updated payments
+    saleRequest.paymentDetails = updatedPayments;
     await saleRequest.save();
 
     return res.status(200).json({
@@ -670,7 +802,6 @@ export const updatePayment = async (req, res) => {
     const { requestId, paymentId } = req.params;
     const updates = req.body;
 
-    // Validate updates
     if (!updates || typeof updates !== 'object') {
       return res.status(400).json({ 
         success: false, 
@@ -697,11 +828,20 @@ export const updatePayment = async (req, res) => {
       });
     }
 
+    const basePrice = parseFloat(saleRequest.basePrice || 0);
+    const paymentAmount = parseFloat(updates.amount);
+
+    // Recalculate percentagePaid if amount is present and valid
+    if (!isNaN(paymentAmount) && basePrice > 0) {
+      const calculatedPercentage = (paymentAmount / basePrice) * 100;
+      updates.percentagePaid = parseFloat(calculatedPercentage.toFixed(2));
+    }
+
     // Apply updates
     saleRequest.paymentDetails[paymentIndex] = {
       ...saleRequest.paymentDetails[paymentIndex],
       ...updates,
-      _id: paymentId // Preserve original ID
+      _id: paymentId
     };
 
     await saleRequest.save();
@@ -719,6 +859,7 @@ export const updatePayment = async (req, res) => {
     });
   }
 };
+
 
 
 
@@ -774,11 +915,18 @@ export const deletePayment = async (req, res) => {
 
 export const downloadApprovedRequests = async (req, res) => {
   try {
-    const approvedRequests = await SaleRequest.find({ status: 'Approved' })
-    .populate('inventoryId', 'unitNumber')
-    .select(
-      'customerName customerInfo.contactNumber customerInfo.email customerInfo.guardianName customerInfo.panNumber customerInfo.aadharCardNumber customerInfo.address customerInfo.state customerInfo.country customerInfo.pin unitDetails.unitType unitDetails.unitCost'
-    );
+    const { userId } = req.query;
+
+    const filter = { status: 'Approved' };
+    if (userId) filter.createdBy = userId;
+
+    const approvedRequests = await SaleRequest.find(filter)
+      .populate('inventoryId', 'unitNumber')
+      .populate('createdBy', 'name')        // Broker name
+      .populate('mainBroker', 'name')       // Main broker name
+      .select(
+        'customerName customerInfo.contactNumber customerInfo.email customerInfo.guardianName customerInfo.panNumber customerInfo.aadharCardNumber customerInfo.address customerInfo.state customerInfo.country customerInfo.pin unitDetails.unitType unitDetails.unitCost brokerageDetails totalBrokerage isBrokerageComplete'
+      );
 
     if (!approvedRequests.length) {
       return res.status(404).json({ message: 'No approved requests found' });
@@ -801,9 +949,13 @@ export const downloadApprovedRequests = async (req, res) => {
       { header: 'Email', key: 'email', width: 25 },
       { header: 'Unit Type', key: 'unitType', width: 15 },
       { header: 'Unit Cost', key: 'unitCost', width: 15 },
+      { header: 'Broker Name', key: 'brokerName', width: 20 },
+      { header: 'Main Broker Name', key: 'mainBrokerName', width: 20 },
+      { header: 'Total Brokerage', key: 'totalBrokerage', width: 15 },
+      { header: 'Brokerage Complete?', key: 'isBrokerageComplete', width: 20 }
     ];
 
-    // Populate the worksheet with data
+    // Populate worksheet rows
     approvedRequests.forEach((request) => {
       worksheet.addRow({
         customerName: request.customerName || 'N/A',
@@ -816,20 +968,23 @@ export const downloadApprovedRequests = async (req, res) => {
         pin: request.customerInfo?.pin || 'N/A',
         contactNumber: request.customerInfo?.contactNumber || 'N/A',
         email: request.customerInfo?.email || 'N/A',
-        unitType: request.inventoryId?.unitNumber || 'N/A',
+        unitType: request.unitDetails?.unitType || 'N/A',
         unitCost: request.unitDetails?.unitCost || 'N/A',
-     
+        brokerName: request.createdBy?.name || 'N/A',
+        mainBrokerName: request.mainBroker?.name || 'N/A',
+        totalBrokerage: request.brokerageDetails?.totalBrokerage ?? 'N/A',
+        isBrokerageComplete: request.brokerageDetails?.isBrokerageComplete ? 'Yes' : 'No',
       });
     });
 
-    // Set response headers for download
+    // Set response headers
     res.setHeader(
       'Content-Disposition',
-      'attachment; filename="approved_requests.xlsx"'
+      `attachment; filename="approved_requests_${userId ? userId : 'all'}.xlsx"`
     );
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 
-    // Write to response instead of saving to file
+    // Stream workbook to response
     await workbook.xlsx.write(res);
     res.end();
   } catch (error) {
@@ -839,63 +994,117 @@ export const downloadApprovedRequests = async (req, res) => {
 };
 
 
+
+
+
+
+
 export const downloadPaymentDetails = async (req, res) => {
   try {
-    const { saleRequestId } = req.params; // Get sale request ID from URL params
+    const { saleRequestId } = req.params;
 
     if (!saleRequestId) {
       return res.status(400).json({ message: 'Sale request ID is required' });
     }
 
     const saleRequest = await SaleRequest.findOne({ _id: saleRequestId, status: 'Approved' }).select(
-      'customerName paymentDetails'
+      'customerName basePrice paymentDetails'
     );
 
-    if (!saleRequest) {
-      return res.status(404).json({ message: 'No approved request found with this ID' });
+    if (!saleRequest || !saleRequest.paymentDetails.length) {
+      return res.status(404).json({ message: 'No valid approved sale request with payment details found.' });
+    }
+    
+
+    // Filter only cleared payments
+    const clearedPayments = saleRequest.paymentDetails.filter(p => p.isChequeCleared);
+
+    if (!clearedPayments.length) {
+      return res.status(404).json({ message: 'No cleared brokerage payments found for this request' });
     }
 
-    if (!saleRequest.paymentDetails.length) {
-      return res.status(404).json({ message: 'No payment details found for this request' });
-    }
+    const totalPaid = clearedPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+    const basePrice = saleRequest.basePrice || 0;
+    const remaining = Math.max(basePrice - totalPaid, 0);
 
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Payment Details');
+    // HTML Template for PDF
+    const html = `
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; }
+            h1 { text-align: center; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+            th { background-color: #f0f0f0; }
+            .summary { margin-top: 30px; font-weight: bold; }
+          </style>
+        </head>
+        <body>
+          <h1>INVOICE</h1>
+          <p><strong>Customer Name:</strong> ${saleRequest.customerName}</p>
+          <p><strong>Invoice ID:</strong> ${saleRequestId}</p>
+          <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
 
-    // Define columns
-    worksheet.columns = [
-      { header: 'Customer Name', key: 'customerName', width: 20 },
-      { header: 'Cheque Number', key: 'chequeNumber', width: 20 },
-      { header: 'Date', key: 'date', width: 15 },
-      { header: 'Amount', key: 'amount', width: 15 },
-      { header: 'Bank Name', key: 'bankName', width: 20 },
-      { header: 'Payment Status', key: 'isChequeCleared', width: 15 },
-    ];
+          <table>
+            <thead>
+              <tr>
+                <th>S.No</th>
+                <th>Cheque Number</th>
+                <th>Date</th>
+                <th>Amount</th>
+                <th>Bank Name</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${clearedPayments.map((p, i) => `
+                <tr>
+                  <td>${i + 1}</td>
+                  <td>${p.chequeNumber || 'N/A'}</td>
+                  <td>${p.date ? new Date(p.date).toLocaleDateString() : 'N/A'}</td>
+                  <td>₹${p.amount || 0}</td>
+                  <td>${p.bankName || 'N/A'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
 
-    // Populate the worksheet with data
-    saleRequest.paymentDetails.forEach((payment) => {
-      worksheet.addRow({
-        customerName: saleRequest.customerName || 'N/A',
-        chequeNumber: payment.chequeNumber || 'N/A',
-        date: payment.date ? new Date(payment.date).toLocaleDateString() : 'N/A',
-        amount: payment.amount || 0,
-        bankName: payment.bankName || 'N/A',
-        isChequeCleared: payment.isChequeCleared ? 'Cleared' : 'Not Cleared',
-      });
-    });
+          <div class="summary">
+            <p>Base Price: ₹${basePrice}</p>
+            <p>Total Paid: ₹${totalPaid}</p>
+            <p>Remaining Balance: ₹${remaining}</p>
+          </div>
+        </body>
+      </html>
+    `;
 
-    // Set response headers for download
-    res.setHeader('Content-Disposition', `attachment; filename="payment_details_${saleRequestId}.xlsx"`);
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    // Generate PDF with puppeteer
+const browser = await puppeteer.launch({
+  headless: 'new', // important for newer puppeteer versions
+  args: ['--no-sandbox', '--disable-setuid-sandbox'],
+});
+const page = await browser.newPage();
+await page.setContent(html, { waitUntil: 'load' }); // Ensure full HTML is loaded
+const pdfBuffer = await page.pdf({ format: 'A4' });
+await browser.close();
 
-    // Write to response instead of saving to file
-    await workbook.xlsx.write(res);
-    res.end();
+// Set proper headers and send buffer
+res.set({
+  'Content-Type': 'application/pdf',
+  'Content-Disposition': `attachment; filename="invoice_${saleRequestId}.pdf"`,
+  'Content-Length': pdfBuffer.length,
+});
+res.end(pdfBuffer);
+
   } catch (error) {
-    console.error('Error generating Excel:', error);
+    console.error('Error generating PDF invoice:', error);
     res.status(500).json({ message: 'Internal Server Error' });
   }
 };
+
+
+
+
 
 
 

@@ -5,6 +5,7 @@ const SaleForm = ({ inventory, closeForm, userId }) => {
     const token = localStorage.getItem('token');
     const [formData, setFormData] = useState({
         customerName: '',
+        basePrice : '',
         customerInfo: {
             guardianName: '',
             age: '',
@@ -109,6 +110,7 @@ const SaleForm = ({ inventory, closeForm, userId }) => {
             panCardImage,
             chequeImage,
             mainBroker,
+            basePrice,
         } = formData;
 
         // if (!customerName || !panCardImage || !chequeImage || !customerInfo) {
@@ -139,6 +141,9 @@ const SaleForm = ({ inventory, closeForm, userId }) => {
         formDataToSubmit.append('createdBy', userId);
         if (mainBroker) {
             formDataToSubmit.append('mainBroker', mainBroker);
+        }
+        if (basePrice) {
+            formDataToSubmit.append('basePrice', basePrice);
         }
         
 
@@ -346,6 +351,17 @@ const SaleForm = ({ inventory, closeForm, userId }) => {
                             />
                         </div>
                     </div>
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                    <div className="flex flex-col">
+                        <label className="font-medium text-gray-700">Base Price</label>
+                        <input
+                        type="number"
+                        name="basePrice"
+                        value={formData.basePrice}
+                        onChange={handleChange}
+                        className="mt-2 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
 
                     <div className="flex flex-col">
                         <label className="font-medium text-gray-700">Broker (optional)</label>
@@ -357,7 +373,7 @@ const SaleForm = ({ inventory, closeForm, userId }) => {
                                     mainBroker: e.target.value, // Update the mainBroker in formData
                                 }));
                             }}
-                            className="w-full border p-2 rounded"
+                            className="w-full mt-2 border p-2 rounded"
                         >
                             <option value="">Select a broker</option>
                             {users.map((user) => (
@@ -368,6 +384,7 @@ const SaleForm = ({ inventory, closeForm, userId }) => {
                         </select>
 
 
+                    </div>
                     </div>
 
                     <div className="flex justify-end space-x-4">

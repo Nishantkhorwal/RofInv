@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-function RequestEditForm({ closeForm, requestId }) {
+function RequestEditForm({ closeForm, requestId, onUpdate }) {
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
     const token = localStorage.getItem("token");
     const [users, setUsers] = useState([]); // Store users
@@ -57,6 +57,12 @@ function RequestEditForm({ closeForm, requestId }) {
             unitCost: '',
             otherCharges: '',
         },
+        brokerageDetails: {
+            totalBrokerage: '',
+            isBrokerageComplete: false,
+            bba: false,
+        },
+        basePrice: null,
         mainBroker: null,
         panCardImage: null,
         chequeImage: null,
@@ -76,14 +82,17 @@ function RequestEditForm({ closeForm, requestId }) {
                         'Authorization': `Bearer ${token}`,
                     },
                 });
-        
+
                 const data = await response.json();
                 console.log("API Response:", data); // Debugging
-        
+
                 if (data.saleRequests && Array.isArray(data.saleRequests)) {
                     const saleRequest = data.saleRequests.find(request => request._id === requestId);
-        
+
                     if (saleRequest) {
+                        const resolvedMainBroker = typeof saleRequest.mainBroker === 'string'
+                            ? users.find(u => u._id === saleRequest.mainBroker)
+                            : saleRequest.mainBroker;
                         setFormData({
                             customerName: saleRequest.customerName || '',
                             customerInfo: {
@@ -107,7 +116,14 @@ function RequestEditForm({ closeForm, requestId }) {
                                 unitCost: saleRequest.unitDetails?.unitCost || '',
                                 otherCharges: saleRequest.unitDetails?.otherCharges || '',
                             },
-                            mainBroker: saleRequest.mainBroker || null,
+                            brokerageDetails: {
+                                totalBrokerage: saleRequest.brokerageDetails?.totalBrokerage,
+                                isBrokerageComplete: saleRequest.brokerageDetails?.isBrokerageComplete,
+                                bba: saleRequest.brokerageDetails?.bba,
+                            },
+                            inventoryId: saleRequest.inventoryId || {},
+                            basePrice: saleRequest.basePrice || null,
+                            mainBroker: resolvedMainBroker || null,
                             panCardImage: saleRequest.panCardImagePath || null, // Corrected
                             chequeImage: saleRequest.chequeImagePath || null, // Corrected
                         });
@@ -121,40 +137,123 @@ function RequestEditForm({ closeForm, requestId }) {
                 console.error('Error fetching sale requests:', error);
             }
         };
-        
+
 
         if (requestId) {
             fetchSaleRequest();
         }
     }, [requestId]);
 
+    // const handleSubmit = (e) => {
+    //     e.preventDefault();
+
+    //     // Get the full broker object based on the selected ID
+    //     const selectedBroker = typeof formData.mainBroker === 'string'
+    //         ? users.find(u => u._id === formData.mainBroker)
+    //         : formData.mainBroker;
+
+    //     // Prepare data for submission
+    //     const submissionData = {
+    //         ...formData,
+    //         mainBroker: selectedBroker?._id || formData.mainBroker?._id || formData.mainBroker
+    //     };
+
+
+    //     fetch(`${API_BASE_URL}/api/project/requests/${requestId}/edit-customer`, {
+    //         method: 'PUT',
+    //         headers: {
+    //             'Authorization': `Bearer ${token}`,
+    //             'Content-Type': 'application/json',
+    //         },
+    //         body: JSON.stringify(submissionData),
+    //     })
+    //         .then((res) => res.json())
+    //         .then((data) => {
+    //             if (data.success) {
+    //                 const updatedWithBrokers = {
+    //                     ...data.saleRequest,
+    //                     createdBy: formData.createdBy, // Preserve from form state
+    //                     mainBroker: typeof formData.mainBroker === 'object'
+    //                         ? formData.mainBroker
+    //                         : users.find(u => u._id === formData.mainBroker)
+    //                 };
+    //                 console.log('Sale request updated successfully');
+    //                 onUpdate(updatedWithBrokers);
+    //                 closeForm();
+    //             } else {
+    //                 console.error('Failed to update sale request');
+    //             }
+    //         })
+    //         .catch((err) => console.error('Error updating sale request:', err));
+    // };
     const handleSubmit = (e) => {
         e.preventDefault();
-
+    
+        const selectedBroker = typeof formData.mainBroker === 'string'
+            ? users.find(u => u._id === formData.mainBroker)
+            : formData.mainBroker;
+    
+        const submissionData = new FormData();
+    
+        // Append regular fields
+        submissionData.append('customerName', formData.customerName);
+        submissionData.append('basePrice', formData.basePrice);
+        submissionData.append('mainBroker', selectedBroker?._id || '');
+    
+        // Append nested fields
+        for (const key in formData.customerInfo) {
+            submissionData.append(`customerInfo[${key}]`, formData.customerInfo[key]);
+        }
+    
+        for (const key in formData.unitDetails) {
+            submissionData.append(`unitDetails[${key}]`, formData.unitDetails[key]);
+        }
+    
+        for (const key in formData.brokerageDetails) {
+            submissionData.append(`brokerageDetails[${key}]`, formData.brokerageDetails[key]);
+        }
+    
+        // Append files if they're of type File
+        if (formData.panCardImage instanceof File) {
+            submissionData.append('panCardImage', formData.panCardImage);
+        }
+    
+        if (formData.chequeImage instanceof File) {
+            submissionData.append('chequeImage', formData.chequeImage);
+        }
+    
         fetch(`${API_BASE_URL}/api/project/requests/${requestId}/edit-customer`, {
             method: 'PUT',
             headers: {
                 'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
+                // DO NOT manually set Content-Type when using FormData
             },
-            body: JSON.stringify(formData),
+            body: submissionData,
         })
-            .then((res) => res.json())
-            .then((data) => {
+            .then(res => res.json())
+            .then(data => {
                 if (data.success) {
+                    const updatedWithBrokers = {
+                        ...data.saleRequest,
+                        createdBy: formData.createdBy,
+                        mainBroker: typeof formData.mainBroker === 'object'
+                            ? formData.mainBroker
+                            : users.find(u => u._id === formData.mainBroker)
+                    };
                     console.log('Sale request updated successfully');
+                    onUpdate(updatedWithBrokers);
                     closeForm();
                 } else {
                     console.error('Failed to update sale request');
                 }
             })
-            .catch((err) => console.error('Error updating sale request:', err));
+            .catch(err => console.error('Error updating sale request:', err));
     };
-
+    
     return (
         <div className="fixed inset-0 bg-gray-900 bg-opacity-50 flex justify-center z-50 items-center overflow-auto">
             <div className="bg-gray-300 rounded-lg shadow-lg p-8 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-                <h2 className="text-2xl font-semibold text-center mb-6">Sale Details</h2>
+                <h2 className="text-2xl font-semibold text-center mb-6">Edit Details</h2>
                 <form onSubmit={handleSubmit}>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="form-group">
@@ -213,7 +312,7 @@ function RequestEditForm({ closeForm, requestId }) {
                                 className="w-full p-2 border border-gray-300 rounded-md"
                             />
                         </div>
-                        
+
                         <div className="form-group">
                             <label className="block text-gray-700 font-semibold mb-2">Aadhar Card Number</label>
                             <input
@@ -311,8 +410,154 @@ function RequestEditForm({ closeForm, requestId }) {
                                 }
                                 className="w-full p-2 border border-gray-300 rounded-md"
                             />
-                        </div>   
+                        </div>
+                        <div className="form-group">
+                            <label className="block text-gray-700 font-semibold mb-2">Main Broker</label>
+                            <select
+                                value={formData.mainBroker?._id || formData.mainBroker || ''}
+                                onChange={(e) => {
+                                    const selectedId = e.target.value;
+                                    const selectedBroker = users.find(u => u._id === selectedId);
+                                    setFormData({
+                                        ...formData,
+                                        mainBroker: selectedBroker || selectedId
+                                    });
+                                }}
+
+                                className="w-full p-2 border border-gray-300 rounded-md"
+                            >
+                                <option value=''>{formData.mainBroker?.name || ''}</option>
+                                {users.map((broker) => (
+                                    <option key={broker._id} value={broker._id}>
+                                        {broker.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="form-group">
+                            <label className="block text-gray-700 font-semibold mb-2">Base Price</label>
+                            <input
+                                type="number"
+                                value={formData.basePrice}
+                                onChange={(e) =>
+                                    setFormData({ ...formData, basePrice: e.target.value })
+                                }
+                                className="w-full p-2 border border-gray-300 rounded-md"
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label className="block text-gray-700 font-semibold mb-2">Total Brokerage</label>
+                            <input
+                                type="number"
+                                value={formData.brokerageDetails.totalBrokerage}
+                                onChange={(e) =>
+                                    setFormData({
+                                        ...formData,
+                                        brokerageDetails: { ...formData.brokerageDetails, totalBrokerage: e.target.value },
+                                    })
+                                }
+                                className="w-full p-2 border border-gray-300 rounded-md"
+                            />
+                        </div>
+                        <div className="form-group col-span-2">
+                            <label className="block text-gray-700 font-semibold mb-2">
+                                Brokerage Paid
+                            </label>
+                            <select
+                                value={formData.brokerageDetails.isBrokerageComplete ? 'true' : 'false'}
+                                onChange={(e) =>
+                                    setFormData({
+                                        ...formData,
+                                        brokerageDetails: {
+                                            ...formData.brokerageDetails,
+                                            isBrokerageComplete: e.target.value === 'true',
+                                        },
+                                    })
+                                }
+                                className="w-full p-2 border border-gray-300 rounded-md"
+                            >
+                                <option value="false">No</option>
+                                <option value="true">Yes</option>
+                            </select>
+                        </div>
+                        <div className="form-group col-span-2">
+                            <label className="block text-gray-700 font-semibold mb-2">
+                                BBA Paid
+                            </label>
+                            <select
+                                value={formData.brokerageDetails.bba ? 'true' : 'false'}
+                                onChange={(e) =>
+                                    setFormData({
+                                        ...formData,
+                                        brokerageDetails: {
+                                            ...formData.brokerageDetails,
+                                            bba: e.target.value === 'true',
+                                        },
+                                    })
+                                }
+                                className="w-full p-2 border border-gray-300 rounded-md"
+                            >
+                                <option value="false">Not Paid</option>
+                                <option value="true">Paid</option>
+                            </select>
+                        </div>
+
+
                     </div>
+                    {/* Pan Card Image Upload */}
+                    <div className="form-group col-span-2">
+                        <label className="block text-gray-700 font-semibold mb-2">Pan Card Image</label>
+                        {formData.panCardImage && (
+                             <img
+                             src={
+                                 typeof formData.panCardImage === 'string'
+                                     ? `${API_BASE_URL}/${formData.panCardImage}`
+                                     : URL.createObjectURL(formData.panCardImage)
+                             }
+                             alt="Pan Card"
+                             className="mb-2 h-32 object-contain rounded border border-gray-400"
+                         />
+                        )}
+                        <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                    setFormData({ ...formData, panCardImage: file });
+                                }
+                            }}
+                            className="w-full p-2 border border-gray-300 rounded-md"
+                        />
+                    </div>
+
+                    {/* Cheque Image Upload */}
+                    <div className="form-group col-span-2">
+                        <label className="block text-gray-700 font-semibold mb-2">Cheque Image</label>
+                        {formData.chequeImage && (
+                            <img
+                            src={
+                                typeof formData.chequeImage === 'string'
+                                    ? `${API_BASE_URL}/${formData.chequeImage}`
+                                    : URL.createObjectURL(formData.chequeImage)
+                            }
+                            alt="Cheque"
+                            className="mb-2 h-32 object-contain rounded border border-gray-400"
+                        />
+                        )}
+                        <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                    setFormData({ ...formData, chequeImage: file });
+                                }
+                            }}
+                            className="w-full p-2 border border-gray-300 rounded-md"
+                        />
+                    </div>
+
 
                     <div className="mt-6 flex justify-end gap-4">
                         <button type="submit" className="bg-blue-600 text-white py-2 px-4 rounded-md">

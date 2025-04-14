@@ -30,7 +30,15 @@ router.put('/inventory/:inventoryId/update-status',
 );
 
 
-router.put('/requests/:requestId/edit-customer', authenticateUser, editSaleRequestCustomerDetails);
+router.put(
+  '/requests/:requestId/edit-customer',
+  authenticateUser,
+  upload.fields([
+    { name: 'panCardImage', maxCount: 1 },
+    { name: 'chequeImage', maxCount: 1 },
+  ]),
+  editSaleRequestCustomerDetails
+);
 router.get('/requests/approved/download', authenticateUser, downloadApprovedRequests);
 router.get('/requests/:saleRequestId/payment/download', authenticateUser, downloadPaymentDetails);
 router.put("/requests/:requestId/payment",authenticateUser,updatePaymentDetails);
