@@ -1457,6 +1457,9 @@ const Sidebar = () => {
   const [towerSearchQueries, setTowerSearchQueries] = useState({});
   const [isNotificationVisible, setIsNotificationVisible] = useState(true);
   const [selectedInventoryForSale, setSelectedInventoryForSale] = useState(null);
+  const [editingInventoryId, setEditingInventoryId] = useState(null);
+  const [editedInventory, setEditedInventory] = useState({});
+
 
 
 
@@ -1466,17 +1469,12 @@ const Sidebar = () => {
     console.log("Pending Requests:", saleRequests.pending);
     console.log("Inventory ID to Check:", inventoryId);
     // Find the current status of the inventory item
-    let currentStatus = "";
-    setProjectInventories((prevInventories) => {
-      prevInventories.forEach((project) => {
-        project.inventory.forEach((item) => {
-          if (item._id === inventoryId) {
-            currentStatus = item.status;
-          }
-        });
-      });
-      return prevInventories;
-    });
+    const inventoryItem = projectInventories
+      .flatMap(project => project.inventory)
+      .find(item => item._id === inventoryId);
+
+    const currentStatus = inventoryItem?.status || "";
+
 
 
     const hasPendingRequest = saleRequests.pending.some((request) => {
@@ -1508,6 +1506,19 @@ const Sidebar = () => {
       });
       return; // Exit here to show the form
     }
+    if (newStatus === "Unsold" && currentStatus === "Sold") {
+      const confirmUnsold = window.confirm(
+        "Are you sure you want to mark this Sold property as Unsold? Customer data will be removed."
+      );
+      if (!confirmUnsold) return;
+    }
+    if (newStatus === "Hold" && currentStatus === "Sold") {
+      const confirmHold = window.confirm(
+        "Are you sure you want to mark this Sold property as Hold? Customer details will be cleared."
+      );
+      if (!confirmHold) return;
+    }
+
 
     // Optimistic UI update: immediately reflect the status change in the UI
     setProjectInventories((prevInventories) => {
@@ -1626,6 +1637,38 @@ const Sidebar = () => {
         return { ...prev, [projectId]: nextPage };
       });
     };
+    const handleSaveInventory = async (id, updatedData) => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/project/update-inventory/${id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(updatedData),
+        });
+
+        if (!res.ok) throw new Error("Failed to update inventory");
+
+        const updated = await res.json();
+
+        // Update local state
+        setProjectInventories((prevProjects) =>
+          prevProjects.map((project) => {
+            return {
+              ...project,
+              inventory: project.inventory.map((inv) =>
+                inv._id === id ? { ...inv, ...updatedData } : inv
+              ),
+            };
+          })
+        );
+
+      } catch (err) {
+        console.error("Error updating inventory:", err);
+      }
+    };
+
 
 
     if (loading) return <p>Loading inventories...</p>;
@@ -1766,48 +1809,318 @@ const Sidebar = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {project.inventory.map((item) => (
-                      <tr key={item._id}>
-                        <td className="px-4 py-2">{Number(item.areaSqYard).toFixed(2)}</td>
-                        <td className="px-4 py-2">{item.W}</td>
-                        <td className="px-4 py-2">{item.L}</td>
-                        <td className="px-4 py-2">{item.type}</td>
-                        <td className="px-4 py-2">{item.unitNumber}</td>
-                        <td className="px-4 py-2">{item.floor}</td>
-                        <td className="px-4 py-2">
-                          <select
-                            value={item.status}
-                            onChange={(e) => handleStatusChange(item._id, e.target.value)}
-                            disabled={item.status === "Sold"}
-                            className={`font-bold  text-center px-2 py-1 rounded ${item.status === "Sold"
-                              ? "text-green-600 cursor-not-allowed bg-gray-200 appearance-none pointer-events-none"
-                              : item.status === "Unsold"
-                                ? "text-red-600 cursor-pointer"
-                                : "text-yellow-500 cursor-pointer"
-                              }`}
-                          >
-                            <option value="Sold">Sold</option>
-                            <option value="Unsold">Unsold</option>
-                            <option value="Hold">Hold</option>
-                          </select>
-                        </td>
-                        <td className="px-4 py-2">{Number(item.carpetArea).toFixed(2)}</td>
-                        <td className="px-4 py-2">{Number(item.terraceArea).toFixed(2)}</td>
-                        <td className="px-4 py-2">{Number(item.stiltArea).toFixed(2)}</td>
-                        <td className="px-4 py-2">{Number(item.basementArea).toFixed(2)}</td>
-                        <td className="px-4 py-2">{Number(item.mumty).toFixed(2)}</td>
-                        <td className="px-4 py-2">{Number(item.commonArea).toFixed(2)}</td>
-                        <td className="px-4 py-2">{Number(item.actualArea).toFixed(2)}</td>
-                        <td className="px-4 py-2">{item.PLC}</td>
-                        <td className="px-4 py-2">
-                          {parseFloat(item.plcCharges) >= 0 && parseFloat(item.plcCharges) <= 1
-                            ? `${parseFloat(item.plcCharges) * 100}%`
-                            : item.plcCharges}
-                        </td>
+                    {project.inventory.map((item) => {
+                      const isEditing = editingInventoryId === item._id;
+                      return (
+                        <tr key={item._id}>
+                          <td className="px-4 py-2">
+                            {isEditing ? (
+                              <input
+                              type="number"
+                              className="border px-2 py-1 w-20"
+                              value={editedInventory.areaSqYard !== undefined ? editedInventory.areaSqYard : item.areaSqYard}
+                              onChange={(e) =>
+                                setEditedInventory((prev) => ({
+                                  ...prev,
+                                  areaSqYard: e.target.value,
+                                }))
+                              }
+                            />
+                            ) : (
+                              Number(item.areaSqYard).toFixed(2)
+                            )}
+                          </td>
+                          <td className="px-4 py-2">
+                            {isEditing ? (
+                              <input
+                                type="text"
+                                className="border px-2 py-1 w-20"
+                                value={editedInventory.W !== undefined ? editedInventory.W : item.W}
+                                onChange={(e) =>
+                                  setEditedInventory((prev) => ({
+                                    ...prev,
+                                    W: e.target.value,
+                                  }))
+                                }
+                              />
+                            ) : (
+                              item.W
+                            )}
+                          </td>
+                          <td className="px-4 py-2">
+                            {isEditing ? (
+                              <input
+                                type="text"
+                                className="border px-2 py-1 w-20"
+                                value={editedInventory.L !== undefined ? editedInventory.L : item.L}
+                                onChange={(e) =>
+                                  setEditedInventory((prev) => ({
+                                    ...prev,
+                                    L: e.target.value,
+                                  }))
+                                }
+                              />
+                            ) : (
+                              item.L
+                            )}
+                          </td>
+
+                          <td className="px-4 py-2">
+                            {isEditing ? (
+                              <input
+                                type="text"
+                                className="border px-2 py-1 w-24"
+                                value={editedInventory.type !== undefined ? editedInventory.type : item.type}
+                                onChange={(e) =>
+                                  setEditedInventory((prev) => ({
+                                    ...prev,
+                                    type: e.target.value,
+                                  }))
+                                }
+                              />
+                            ) : (
+                              item.type
+                            )}
+                          </td>
+
+                          <td className="px-4 py-2">
+                            {isEditing ? (
+                              <input
+                                type="text"
+                                className="border px-2 py-1 w-24"
+                                value={editedInventory.unitNumber !== undefined ? editedInventory.unitNumber : item.unitNumber}
+                                onChange={(e) =>
+                                  setEditedInventory((prev) => ({
+                                    ...prev,
+                                    unitNumber: e.target.value,
+                                  }))
+                                }
+                              />
+                            ) : (
+                              item.unitNumber
+                            )}
+                          </td>
+
+                          <td className="px-4 py-2">
+                            {isEditing ? (
+                              <input
+                                type="text"
+                                className="border px-2 py-1 w-16"
+                                value={editedInventory.floor !== undefined ? editedInventory.floor : item.floor}
+                                onChange={(e) =>
+                                  setEditedInventory((prev) => ({
+                                    ...prev,
+                                    floor: e.target.value,
+                                  }))
+                                }
+                              />
+                            ) : (
+                              item.floor
+                            )}
+                          </td>
+                          <td className="px-4 py-2">
+                            <select
+                              value={item.status}
+                              onChange={(e) => handleStatusChange(item._id, e.target.value)}
+                              disabled={false}
+                              className={`font-bold  text-center px-2 py-1 rounded ${item.status === "Sold"
+                                ? "text-green-600  bg-gray-200 "
+                                : item.status === "Unsold"
+                                  ? "text-red-600 cursor-pointer"
+                                  : "text-yellow-500 cursor-pointer"
+                                }`}
+                            >
+                              <option value="Sold">Sold</option>
+                              <option value="Unsold">Unsold</option>
+                              <option value="Hold">Hold</option>
+                            </select>
+                          </td>
+                          <td className="px-4 py-2">
+                            {isEditing ? (
+                              <input
+                                type="number"
+                                className="border px-2 py-1 w-20"
+                                value={editedInventory.carpetArea !== undefined ? editedInventory.carpetArea : item.carpetArea}
+                                onChange={(e) =>
+                                  setEditedInventory((prev) => ({
+                                    ...prev,
+                                    carpetArea: e.target.value,
+                                  }))
+                                }
+                              />
+                            ) : (
+                              Number(item.carpetArea).toFixed(2)
+                            )}
+                          </td>
+
+                          <td className="px-4 py-2">
+                            {isEditing ? (
+                              <input
+                                type="number"
+                                className="border px-2 py-1 w-20"
+                                value={editedInventory.terraceArea !== undefined ? editedInventory.terraceArea : item.terraceArea}
+                                onChange={(e) =>
+                                  setEditedInventory((prev) => ({
+                                    ...prev,
+                                    terraceArea: e.target.value,
+                                  }))
+                                }
+                              />
+                            ) : (
+                              Number(item.terraceArea).toFixed(2)
+                            )}
+                          </td>
+
+                          <td className="px-4 py-2">
+                            {isEditing ? (
+                              <input
+                                type="number"
+                                className="border px-2 py-1 w-20"
+                                value={editedInventory.stiltArea !== undefined ? editedInventory.stiltArea : item.stiltArea}
+                                onChange={(e) =>
+                                  setEditedInventory((prev) => ({
+                                    ...prev,
+                                    stiltArea: e.target.value,
+                                  }))
+                                }
+                              />
+                            ) : (
+                              Number(item.stiltArea).toFixed(2)
+                            )}
+                          </td>
+
+                          <td className="px-4 py-2">
+                            {isEditing ? (
+                              <input
+                                type="number"
+                                className="border px-2 py-1 w-20"
+                                value={editedInventory.basementArea !== undefined ? editedInventory.basementArea : item.basementArea}
+                                onChange={(e) =>
+                                  setEditedInventory((prev) => ({
+                                    ...prev,
+                                    basementArea: e.target.value,
+                                  }))
+                                }
+                              />
+                            ) : (
+                              Number(item.basementArea).toFixed(2)
+                            )}
+                          </td>
+
+                          <td className="px-4 py-2">
+                            {isEditing ? (
+                              <input
+                                type="number"
+                                className="border px-2 py-1 w-20"
+                                value={editedInventory.mumty !== undefined ? editedInventory.mumty : item.mumty}
+                                onChange={(e) =>
+                                  setEditedInventory((prev) => ({
+                                    ...prev,
+                                    mumty: e.target.value,
+                                  }))
+                                }
+                              />
+                            ) : (
+                              Number(item.mumty).toFixed(2)
+                            )}
+                          </td>
+                          <td className="px-4 py-2">
+                            {isEditing ? (
+                              <input
+                                type="number"
+                                className="border px-2 py-1 w-20"
+                                value={editedInventory.commonArea !== undefined ? editedInventory.commonArea : item.commonArea}
+                                onChange={(e) =>
+                                  setEditedInventory((prev) => ({
+                                    ...prev,
+                                    commonArea: e.target.value,
+                                  }))
+                                }
+                              />
+                            ) : (
+                              Number(item.commonArea).toFixed(2)
+                            )}
+                          </td>
+
+                          <td className="px-4 py-2">
+                            {isEditing ? (
+                              <input
+                                type="number"
+                                className="border px-2 py-1 w-20"
+                                value={editedInventory.actualArea !== undefined ? editedInventory.actualArea : item.actualArea}
+                                onChange={(e) =>
+                                  setEditedInventory((prev) => ({
+                                    ...prev,
+                                    actualArea: e.target.value,
+                                  }))
+                                }
+                              />
+                            ) : (
+                              Number(item.actualArea).toFixed(2)
+                            )}
+                          </td>
+
+                          <td className="px-4 py-2">
+                            {isEditing ? (
+                              <input
+                                type="text"
+                                className="border px-2 py-1 w-24"
+                                value={editedInventory.PLC !== undefined ? editedInventory.PLC : item.PLC}
+                                onChange={(e) =>
+                                  setEditedInventory((prev) => ({
+                                    ...prev,
+                                    PLC: e.target.value,
+                                  }))
+                                }
+                              />
+                            ) : (
+                              item.PLC
+                            )}
+                          </td>
+
+                          <td className="px-4 py-2">
+                            {isEditing ? (
+                              <input
+                                type="text"
+                                className="border px-2 py-1 w-24"
+                                value={editedInventory.plcCharges !== undefined ? editedInventory.plcCharges : item.plcCharges}
+                                onChange={(e) =>
+                                  setEditedInventory((prev) => ({
+                                    ...prev,
+                                    plcCharges: e.target.value,
+                                  }))
+                                }
+                              />
+                            ) : (
+                              parseFloat(item.plcCharges) >= 0 && parseFloat(item.plcCharges) <= 1
+                                ? `${parseFloat(item.plcCharges) * 100}%`
+                                : item.plcCharges
+                            )}
+                          </td>
+
+                          <td className="px-4 py-2">
+                            <button
+                              onClick={() => {
+                                if (isEditing) {
+                                  // Save logic here
+                                  handleSaveInventory(item._id, editedInventory);
+                                  setEditingInventoryId(null);
+                                  setEditedInventory({});
+                                } else {
+                                  setEditingInventoryId(item._id);
+                                  setEditedInventory(item);
+                                }
+                              }}
+                              className="bg-blue-500 text-white px-2 py-1 rounded"
+                            >
+                              {isEditing ? "Save" : "Edit"}
+                            </button>
+                          </td>
 
 
-                      </tr>
-                    ))}
+                        </tr>
+                      );
+                    })}
                   </tbody>
 
                 </table>

@@ -114,6 +114,34 @@ export const createProjectWithInventory = async (req, res) => {
 };
 
 
+export const updateInventory = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updatedData = req.body;
+
+    const inventory = await Inventory.findById(id);
+    if (!inventory) {
+      return res.status(404).json({ message: 'Inventory item not found.' });
+    }
+
+    // Update fields
+    Object.keys(updatedData).forEach((key) => {
+      inventory[key] = updatedData[key];
+    });
+
+    await inventory.save();
+
+    res.status(200).json({
+      message: 'Inventory updated successfully!',
+      inventory,
+    });
+  } catch (error) {
+    console.error('Error updating inventory:', error);
+    res.status(500).json({ message: 'Internal server error.' });
+  }
+};
+
+
 
 
 export const getInventoryForProject = async (req, res) => {
@@ -563,7 +591,9 @@ export const updateInventoryStatusWithRequestHandling = async (req, res, io) => 
     }
 
     // Handle case where an inventory on "Hold" is marked as "Unsold"
-    if (inventoryItem.status === 'Hold' && status === 'Unsold') {
+    // Handle case where inventory is being marked as "Unsold"
+    if (status === 'Unsold') {
+      // Reject any pending request
       const pendingRequest = await SaleRequest.findOne({ 
         inventoryId: inventoryItem._id, 
         status: 'Pending' 
@@ -581,11 +611,52 @@ export const updateInventoryStatusWithRequestHandling = async (req, res, io) => 
         });
       }
 
+      // Delete any approved request
+      const approvedRequest = await SaleRequest.findOne({ 
+        inventoryId: inventoryItem._id, 
+        status: 'Approved' 
+      });
+
+      if (approvedRequest) {
+        await SaleRequest.deleteOne({ _id: approvedRequest._id });
+
+        io.emit('requestDeleted', {
+          requestId: approvedRequest._id,
+          inventoryId: inventoryItem._id,
+          inventoryStatus: 'Unsold',
+        });
+      }
+
       // Clear customer-related fields since sale is canceled
       inventoryItem.customerName = null;
       inventoryItem.panCardImagePath = null;
       inventoryItem.chequeImagePath = null;
     }
+    // Handle reverting Sold inventory to Hold — clear sensitive data
+if (inventoryItem.status === 'Sold' && status === 'Hold') {
+  // Optional: delete any approved request
+  const approvedRequest = await SaleRequest.findOne({ 
+    inventoryId: inventoryItem._id, 
+    status: 'Approved' 
+  });
+
+  if (approvedRequest) {
+    await SaleRequest.deleteOne({ _id: approvedRequest._id });
+
+    io.emit('requestDeleted', {
+      requestId: approvedRequest._id,
+      inventoryId: inventoryItem._id,
+      inventoryStatus: 'Hold',
+    });
+  }
+
+  // Clear customer-related fields
+  inventoryItem.customerName = null;
+  inventoryItem.panCardImagePath = null;
+  inventoryItem.chequeImagePath = null;
+}
+
+
 
     // Handle admin directly selling an inventory without an existing request
     if (userRole === 'admin' && status === 'Sold') {

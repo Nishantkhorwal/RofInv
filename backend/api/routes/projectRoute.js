@@ -1,5 +1,5 @@
 import express from 'express';
-import { createProjectWithInventory, getInventoryForProject , holdInventoryItem, getAllProjectInventories, getSaleRequests, handleSaleRequest, updateInventoryStatusWithRequestHandling, editSaleRequestCustomerDetails, downloadApprovedRequests, updatePaymentDetails, updatePayment, downloadPaymentDetails, deletePayment  } from '../controllers/projectController.js';
+import { createProjectWithInventory, getInventoryForProject , holdInventoryItem, getAllProjectInventories, getSaleRequests, handleSaleRequest, updateInventoryStatusWithRequestHandling, editSaleRequestCustomerDetails, downloadApprovedRequests, updatePaymentDetails, updatePayment, downloadPaymentDetails, deletePayment, updateInventory  } from '../controllers/projectController.js';
 import upload from '../multerConfig.js';
 import { io } from '../index.js';
 import authenticateUser from '../middleware/authenticateUser.js';
@@ -15,6 +15,7 @@ router.post('/hold/:inventoryId',authenticateUser, upload.fields([
     { name: 'chequeImage', maxCount: 1 }
   ]), (req, res) => holdInventoryItem(req, res, io));
 router.get('/inventories',authenticateUser, getAllProjectInventories);
+router.put('/update-inventory/:id',authenticateUser, updateInventory);
 // Admin approves a sale request
 router.put('/requests/:requestId',(req, res) => handleSaleRequest(req, res, io));    // Accepts 'approve' or 'reject' as action in body
 // Get all pending sale requests
