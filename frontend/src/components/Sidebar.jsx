@@ -737,17 +737,21 @@ const Sidebar = () => {
         }
 
         // Brokerage status filter
-        const totalPercentagePaid = (request.paymentDetails || []).reduce(
+        const totalPercentagePaid = (request.paymentDetails || [])
+        .filter(payment => payment.isChequeCleared)
+        .reduce(
           (total, payment) => total + (Number(payment.percentagePaid) || 0),
           0
         );
+
         const isPendingBrokerage = !request.brokerageDetails?.isBrokerageComplete;
         const isPaidBrokerage = request.brokerageDetails?.isBrokerageComplete;
+        const isBbaPaid = request.brokerageDetails.bba === true;
 
         let matchesBrokerageStatus = true;
         if (category === 'Approved') {
           if (showPendingBrokerageOnly === 'pending') {
-            matchesBrokerageStatus = totalPercentagePaid >= 40 && isPendingBrokerage;
+            matchesBrokerageStatus = totalPercentagePaid >= 40 && isBbaPaid && isPendingBrokerage;
           } else if (showPendingBrokerageOnly === 'paid') {
             matchesBrokerageStatus = isPaidBrokerage;
           }
