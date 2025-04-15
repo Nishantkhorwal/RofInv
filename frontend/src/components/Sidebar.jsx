@@ -47,7 +47,7 @@ const Sidebar = () => {
   const [showPendingBrokerageOnly, setShowPendingBrokerageOnly] = useState('all');
   const [download, setDownload] = useState(false);
   const [brokerDetails, setBrokerDetails] = useState(false);
-  const[userLoading, setUserLoading] = useState(false);
+  const [userLoading, setUserLoading] = useState(false);
 
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -543,15 +543,15 @@ const Sidebar = () => {
     };
     const updateRequestInCategory = (updatedRequest) => {
       setSaleRequests(prev => {
-        const categoryKey = Object.keys(prev).find(key => 
+        const categoryKey = Object.keys(prev).find(key =>
           prev[key].some(req => req._id === updatedRequest._id)
         );
-        
+
         if (!categoryKey) return prev;
-        
+
         return {
           ...prev,
-          [categoryKey]: prev[categoryKey].map(request => 
+          [categoryKey]: prev[categoryKey].map(request =>
             request._id === updatedRequest._id ? updatedRequest : request
           )
         };
@@ -561,13 +561,13 @@ const Sidebar = () => {
     const handleAddPayment = async (newPayment) => {
       try {
         const token = localStorage.getItem("token");
-        
+
         const paymentToAdd = {
           ...newPayment,
           date: newPayment.date ? new Date(newPayment.date).toISOString() : null,
           nextPaymentDate: newPayment.nextPaymentDate ? new Date(newPayment.nextPaymentDate).toISOString() : null
         };
-    
+
         const response = await fetch(
           `${API_BASE_URL}/api/project/requests/${currentRequest._id}/payment`,
           {
@@ -581,22 +581,22 @@ const Sidebar = () => {
             })
           }
         );
-    
+
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.message || 'Failed to add payment');
         }
-    
+
         const data = await response.json();
-        
+
         const formattedPayments = data.updatedPayments.map(p => ({
           ...p,
           date: p.date ? p.date.split('T')[0] : '',
           nextPaymentDate: p.nextPaymentDate ? p.nextPaymentDate.split('T')[0] : ''
         }));
-        
+
         setPaymentDetails(formattedPayments);
-        
+
         // Update parent state if updateRequestInCategory exists
         if (typeof updateRequestInCategory === 'function') {
           updateRequestInCategory({
@@ -604,7 +604,7 @@ const Sidebar = () => {
             paymentDetails: formattedPayments
           });
         }
-    
+
         setNewPayment({
           chequeNumber: '',
           date: new Date().toISOString().split('T')[0],
@@ -615,7 +615,7 @@ const Sidebar = () => {
           remarks: '',
           isChequeCleared: false
         });
-    
+
       } catch (error) {
         console.error("Error adding payment:", error);
         alert(`Failed to add payment: ${error.message}`);
@@ -626,13 +626,13 @@ const Sidebar = () => {
       try {
         const paymentId = paymentDetails[index]._id;
         const token = localStorage.getItem("token");
-    
+
         const paymentToUpdate = {
           ...updatedPayment,
           date: updatedPayment.date ? new Date(updatedPayment.date).toISOString() : null,
           nextPaymentDate: updatedPayment.nextPaymentDate ? new Date(updatedPayment.nextPaymentDate).toISOString() : null
         };
-    
+
         const response = await fetch(
           `${API_BASE_URL}/api/project/${currentRequest._id}/payments/${paymentId}`,
           {
@@ -644,25 +644,25 @@ const Sidebar = () => {
             body: JSON.stringify(paymentToUpdate)
           }
         );
-    
+
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.message || 'Failed to update payment');
         }
-    
+
         const data = await response.json();
-        
+
         const updatedPaymentData = {
           ...data.updatedPayment,
           date: data.updatedPayment.date ? data.updatedPayment.date.split('T')[0] : '',
           nextPaymentDate: data.updatedPayment.nextPaymentDate ? data.updatedPayment.nextPaymentDate.split('T')[0] : ''
         };
-    
+
         const updatedPayments = [...paymentDetails];
         updatedPayments[index] = updatedPaymentData;
         setPaymentDetails(updatedPayments);
         setEditingPaymentIndex(null);
-    
+
         // Update parent state if updateRequestInCategory exists
         if (typeof updateRequestInCategory === 'function') {
           updateRequestInCategory({
@@ -670,7 +670,7 @@ const Sidebar = () => {
             paymentDetails: updatedPayments
           });
         }
-    
+
       } catch (error) {
         console.error("Error updating payment:", error);
         alert(`Update failed: ${error.message}`);
@@ -710,12 +710,12 @@ const Sidebar = () => {
 
 
 
-    
+
 
 
     const renderTable = (category) => {
       const requests = saleRequests[category.toLowerCase()] || [];
-      
+
 
       // Apply search filter
       const filteredRequests = requests.filter((request) => {
@@ -738,11 +738,11 @@ const Sidebar = () => {
 
         // Brokerage status filter
         const totalPercentagePaid = (request.paymentDetails || [])
-        .filter(payment => payment.isChequeCleared)
-        .reduce(
-          (total, payment) => total + (Number(payment.percentagePaid) || 0),
-          0
-        );
+          .filter(payment => payment.isChequeCleared)
+          .reduce(
+            (total, payment) => total + (Number(payment.percentagePaid) || 0),
+            0
+          );
 
         const isPendingBrokerage = !request.brokerageDetails?.isBrokerageComplete;
         const isPaidBrokerage = request.brokerageDetails?.isBrokerageComplete;
@@ -811,7 +811,7 @@ const Sidebar = () => {
           };
         });
       };
-      
+
 
 
 
@@ -861,8 +861,8 @@ const Sidebar = () => {
                           {(() => {
                             const paymentDetails = request.paymentDetails || [];
                             const totalPercentagePaid = paymentDetails
-                            .filter(payment => payment.isChequeCleared)
-                            .reduce((total, payment) => total + (Number(payment.percentagePaid) || 0), 0);
+                              .filter(payment => payment.isChequeCleared)
+                              .reduce((total, payment) => total + (Number(payment.percentagePaid) || 0), 0);
 
 
                             const isBbaPaid = request.brokerageDetails?.bba;
@@ -905,10 +905,10 @@ const Sidebar = () => {
                             return (
                               <span
                                 className={`px-2 py-1 rounded-lg text-white ${totalPercentage >= 100
-                                    ? 'bg-green-500'
-                                    : totalPercentage >= 40
-                                      ? 'bg-yellow-500'
-                                      : 'bg-red-500'
+                                  ? 'bg-green-500'
+                                  : totalPercentage >= 40
+                                    ? 'bg-yellow-500'
+                                    : 'bg-red-500'
                                   }`}
                               >
                                 {totalPercentage}%
@@ -960,76 +960,76 @@ const Sidebar = () => {
                       )}
                       {request.status === 'Pending' && (
                         <td className="px-3 py-4 flex flex-col">
-                        <a
-                          href={`${API_BASE_URL}/${request.inventoryId.chequeImagePath}`}
-                          download
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className='text-blue-800 hover:text-blue-500'
-                        >
-                          Cheque
-                        </a>
-                        <a
-                          href={`${API_BASE_URL}/${request.inventoryId.panCardImagePath}`}
-                          download
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className='text-blue-800 hover:text-blue-500'
-                        >
-                         
+                          <a
+                            href={`${API_BASE_URL}/${request.inventoryId.chequeImagePath}`}
+                            download
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className='text-blue-800 hover:text-blue-500'
+                          >
+                            Cheque
+                          </a>
+                          <a
+                            href={`${API_BASE_URL}/${request.inventoryId.panCardImagePath}`}
+                            download
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className='text-blue-800 hover:text-blue-500'
+                          >
+
                             Pan Card
-                          
-                        </a>
-                      </td>
-                      )}  
-                      
+
+                          </a>
+                        </td>
+                      )}
+
                       {request.status === 'Approved' && (
-                      <td className="px-3 py-4 flex flex-col">
-                        <a
-                          href={`${API_BASE_URL}/${request.chequeImagePath}`}
-                          download
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className='text-blue-800 hover:text-blue-500'
-                        >
-                          Cheque
-                        </a>
-                        <a
-                          href={`${API_BASE_URL}/${request.panCardImagePath}`}
-                          download
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className='text-blue-800 hover:text-blue-500'
-                        >
-                         
+                        <td className="px-3 py-4 flex flex-col">
+                          <a
+                            href={`${API_BASE_URL}/${request.chequeImagePath}`}
+                            download
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className='text-blue-800 hover:text-blue-500'
+                          >
+                            Cheque
+                          </a>
+                          <a
+                            href={`${API_BASE_URL}/${request.panCardImagePath}`}
+                            download
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className='text-blue-800 hover:text-blue-500'
+                          >
+
                             Pan Card
-                          
-                        </a>
-                      </td>
+
+                          </a>
+                        </td>
                       )}
                       {request.status === 'Rejected' && (
-                      <td className="px-3 py-4 flex flex-col">
-                        <a
-                          href={`${API_BASE_URL}/${request.chequeImagePath}`}
-                          download
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className='text-blue-800 hover:text-blue-500'
-                        >
-                          Cheque
-                        </a>
-                        <a
-                          href={`${API_BASE_URL}/${request.panCardImagePath}`}
-                          download
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className='text-blue-800 hover:text-blue-500'
-                        >
-                         
+                        <td className="px-3 py-4 flex flex-col">
+                          <a
+                            href={`${API_BASE_URL}/${request.chequeImagePath}`}
+                            download
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className='text-blue-800 hover:text-blue-500'
+                          >
+                            Cheque
+                          </a>
+                          <a
+                            href={`${API_BASE_URL}/${request.panCardImagePath}`}
+                            download
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className='text-blue-800 hover:text-blue-500'
+                          >
+
                             Pan Card
-                          
-                        </a>
-                      </td>
+
+                          </a>
+                        </td>
                       )}
                       {request.status === 'Approved' && <td onClick={() => handleEditClick(request._id)} className="px-4 py-4 cursor-pointer"><FiEdit /></td>
                       }
@@ -1071,7 +1071,7 @@ const Sidebar = () => {
                     <h3 className="text-lg font-medium ">Existing Payments</h3>
                     <p className=''>Base Price : {currentRequest?.basePrice}</p>
                     <button disabled={download} onClick={() => handleDownloadPaymentDetails(currentRequest?._id)} className='px-2 py-1 font-semibold bg-yellow-500 rounded-lg'>
-                      { download ? "Creating Invoice..." : "Download Invoice"}
+                      {download ? "Creating Invoice..." : "Download Invoice"}
                     </button>
                   </div>
                   {paymentDetails.length === 0 ? (
@@ -1161,7 +1161,7 @@ const Sidebar = () => {
 
 
 
-                  }
+                    }
                   />
                 </div>
               </div>
@@ -1564,6 +1564,10 @@ const Sidebar = () => {
       alert("Error updating status.");
     }
   };
+  const [inventoryPages, setInventoryPages] = useState({});
+  const inventoriesPerPage = 10;
+
+
 
 
 
@@ -1594,16 +1598,35 @@ const Sidebar = () => {
           return true;
         });
 
+        const page = inventoryPages[project.projectId] || 1;
+        const start = (page - 1) * inventoriesPerPage;
+        const paginatedInventory = filteredInventory.slice(start, start + inventoriesPerPage);
+
         return {
           ...project,
-          inventory: filteredInventory,
+          inventory: paginatedInventory,
+          totalInventory: filteredInventory.length,
         };
+
       })
       .filter((project) => project.inventory.length > 0 || towerSearchQueries[project.projectId]);
 
     const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const currentProjects = filteredProjects.slice(startIndex, startIndex + itemsPerPage);
+
+
+    const handleInventoryPageChange = (projectId, direction, totalInventories) => {
+      setInventoryPages((prev) => {
+        const current = prev[projectId] || 1;
+        const totalPages = Math.ceil(totalInventories / inventoriesPerPage);
+        const nextPage = direction === "next"
+          ? Math.min(current + 1, totalPages)
+          : Math.max(current - 1, 1);
+        return { ...prev, [projectId]: nextPage };
+      });
+    };
+
 
     if (loading) return <p>Loading inventories...</p>;
     if (error) return <p className="text-red-500">Error: {error}</p>;
@@ -1700,13 +1723,21 @@ const Sidebar = () => {
                 placeholder="Search towers or units..."
                 value={towerSearchQueries[project.projectId] || ""}
                 onChange={(e) => {
-                  setTowerSearchQueries({
-                    ...towerSearchQueries,
-                    [project.projectId]: e.target.value,
-                  });
+                  const newQuery = e.target.value;
+                  setTowerSearchQueries((prev) => ({
+                    ...prev,
+                    [project.projectId]: newQuery,
+                  }));
+
+                  // Reset inventory page for that project
+                  setInventoryPages((prev) => ({
+                    ...prev,
+                    [project.projectId]: 1,
+                  }));
                 }}
                 className="border rounded-lg shadow-sm ml-4 px-4 py-2"
               />
+
             </div>
 
             {/* Inventory Table or No Inventory Message */}
@@ -1778,7 +1809,31 @@ const Sidebar = () => {
                       </tr>
                     ))}
                   </tbody>
+
                 </table>
+                {/* Inventory Pagination */}
+                {project.totalInventory > inventoriesPerPage && (
+                  <div className="flex justify-center items-center mt-2">
+                    <button
+                      onClick={() => handleInventoryPageChange(project.projectId, "prev", project.totalInventory)}
+                      disabled={(inventoryPages[project.projectId] || 1) === 1}
+                      className="mx-2 text-black text-xl disabled:text-gray-400"
+                    >
+                      <RiArrowLeftSLine />
+                    </button>
+
+                    <p className="text-sm">{`Page ${inventoryPages[project.projectId] || 1} of ${Math.ceil(project.totalInventory / inventoriesPerPage)}`}</p>
+
+                    <button
+                      onClick={() => handleInventoryPageChange(project.projectId, "next", project.totalInventory)}
+                      disabled={(inventoryPages[project.projectId] || 1) >= Math.ceil(project.totalInventory / inventoriesPerPage)}
+                      className="mx-2 text-black text-xl disabled:text-gray-400"
+                    >
+                      <RiArrowRightSLine />
+                    </button>
+                  </div>
+                )}
+
               </div>
             ) : (
               <p className='px-20 py-10'>No Unit or Tower matches this search result.</p>
@@ -2426,7 +2481,7 @@ const Sidebar = () => {
     } catch (error) {
       console.error("Error updating user:", error);
       alert("Update failed.");
-    } finally{
+    } finally {
       setUserLoading(false);
     }
   };
@@ -2932,7 +2987,7 @@ const Sidebar = () => {
                         onClick={() => saveUserChanges(user._id)}
                         className="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-900"
                       >
-                        { userLoading ? "Saving..." : "Save Changes"}
+                        {userLoading ? "Saving..." : "Save Changes"}
                       </button>
                     )}
                   </div>
