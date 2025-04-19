@@ -26,6 +26,8 @@ import SaleForm from './SaleForm';
 import { FiEdit, FiPlus, FiSave, FiTrash } from 'react-icons/fi';
 import RequestEditForm from './RequestEditForm';
 import { PaymentForm } from './PaymentForm';
+import UserActivity from './UserActivity';
+import ReactSelect from 'react-select';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
@@ -48,6 +50,12 @@ const Sidebar = () => {
   const [download, setDownload] = useState(false);
   const [brokerDetails, setBrokerDetails] = useState(false);
   const [userLoading, setUserLoading] = useState(false);
+  const [selectedRoleFilter, setSelectedRoleFilter] = useState("all");
+  const [role, setRole] = useState(''); // State to track selected role
+
+  const handleRoleChange = (e) => {
+    setRole(e.target.value); // Update the role state on change
+  };
 
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -374,7 +382,7 @@ const Sidebar = () => {
           },
           body: JSON.stringify({
             ...customerDetails, // Include customer details
-            mainBroker: selectedBroker,
+            mainBroker: selectedBroker?.value || null,
             action: "approve",  // Explicitly send action field
           }),
         });
@@ -823,7 +831,7 @@ const Sidebar = () => {
               <thead className="border border-b-gray-950">
                 <tr>
                   <th className="px-4 py-2">Broker</th>
-                  <th className="px-4 py-2">Main Broker</th>
+                  {category === 'Approved' && <th className="px-4 py-2">Main Broker</th>}
                   {category === 'Approved' && <th className="px-4 py-2">Brokerage</th>}
                   <th className="px-4 py-2">Customer</th>
                   <th className="px-4 py-2">Unit</th>
@@ -855,7 +863,11 @@ const Sidebar = () => {
                       <td className="px-4 py-4">{typeof request.createdBy === 'object'
                         ? request.createdBy.name
                         : users.find(u => u._id === request.createdBy)?.name || 'Loading...'}</td>
-                      <td className="px-4 py-4">{request?.mainBroker?.name || 'Not Selected'}</td>
+                      {request.status === 'Approved' && 
+                         (
+                         <td className="px-4 py-4">{request?.mainBroker?.name || 'Not Selected'}</td>
+                         )
+                         }
                       {request.status === 'Approved' && (
                         <td className="px-4 py-4">
                           {(() => {
@@ -1281,21 +1293,19 @@ const Sidebar = () => {
                     className="w-full border p-2 rounded bg-gray-200"
                   />
                 </label>
-                <label className="block mb-2">
+                {/* <label className="block mb-2">
                   Main Broker:
-                  <select
-                    value={selectedBroker}
-                    onChange={(e) => setSelectedBroker(e.target.value)}
-                    className="w-full border p-2 rounded"
-                  >
-                    <option value="">Select a broker</option>
-                    {users.map((user) => (
-                      <option key={user._id} value={user._id}>
-                        {user.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                  <ReactSelect
+  options={brokerOptions}
+  value={selectedBroker}
+  onChange={(option) => {
+    console.log("Broker selected:", option); // 👈 Check this logs the full object
+    setSelectedBroker(option);
+  }}
+  className="w-full"
+/>
+
+                </label> */}
 
 
 
@@ -1347,6 +1357,14 @@ const Sidebar = () => {
         </>
       );
     };
+    const brokerOptions = [
+      { value: "", label: "All Brokers" },
+      ...users.map((user) => ({ value: user._id, label: user.name })),
+    ];
+    
+    const selectedBroker = brokerOptions.find(
+      (option) => option.value === selectedBrokerFilter
+    );
 
     return (
       <div className="space-y-4">
@@ -1378,30 +1396,56 @@ const Sidebar = () => {
             </button>
           )}
           {selectedCategory === "Approved" && (
-            <select
-              value={selectedBrokerFilter}
-              onChange={(e) => setSelectedBrokerFilter(e.target.value)}
-              className="border rounded-lg shadow-sm px-4 py-2"
-            >
-              <option value="">All Brokers</option>
-              {users.map((user) => (
-                <option key={user._id} value={user._id}>
-                  {user.name}
-                </option>
-              ))}
-            </select>
+            <ReactSelect
+            value={selectedBroker}
+            onChange={(selectedOption) => setSelectedBrokerFilter(selectedOption?.value || "")}
+            options={brokerOptions}
+            className="w-full max-w-[10rem]"
+            styles={{
+              menuList: (provided) => ({
+                ...provided,
+                maxHeight: '15rem',
+                overflowY: 'auto',
+              }),
+              menu: (provided) => ({
+                ...provided,
+                maxHeight: 'none', // remove outer maxHeight to avoid double scroll
+              }),
+            }}
+          />
+          
           )}
+
           {selectedCategory === "Approved" && (
-            <select
-              value={chequeStatusFilter}
-              onChange={(e) => setChequeStatusFilter(e.target.value)}
-              className="border rounded-lg shadow-sm px-4 py-2"
-            >
-              <option value="all">All Payment</option>
-              <option value="pending">Not Cleared</option>
-              <option value="cleared">Cleared</option>
-            </select>
+            <ReactSelect
+              value={{
+                label:
+                  chequeStatusFilter === "pending"
+                    ? "Not Cleared"
+                    : chequeStatusFilter === "cleared"
+                    ? "Cleared"
+                    : "All Payment",
+                value: chequeStatusFilter,
+              }}
+              onChange={(selectedOption) =>
+                setChequeStatusFilter(selectedOption?.value || "all")
+              }
+              options={[
+                { label: "All Payment", value: "all" },
+                { label: "Not Cleared", value: "pending" },
+                { label: "Cleared", value: "cleared" },
+              ]}
+              className=" max-w-xs"
+              styles={{
+                menuList: (provided) => ({
+                  ...provided,
+                  maxHeight: "10rem",
+                  overflowY: "auto",
+                }),
+              }}
+            />
           )}
+
 
           {selectedCategory === "Approved" && (
             // 
@@ -2727,6 +2771,18 @@ const Sidebar = () => {
     setUserLoading(true);
     try {
       const originalUser = users.find(user => user._id === userId);
+      const changes = editableData[userId];
+
+    // Check for sensitive transitions like role downgrade
+    if (originalUser.role === "manager" && changes.role === "executive") {
+      const confirmChange = window.confirm(
+        "Changing this user from Manager to Executive will remove their manager-level access. Any assigned executives will no longer be linked. Do you want to proceed?"
+      );
+      if (!confirmChange) {
+        setUserLoading(false);
+        return;
+      }
+    }
 
       // Check what is currently stored
       console.log("Before Update:", originalUser);
@@ -2749,6 +2805,13 @@ const Sidebar = () => {
       if (editableData[userId]?.reraNumber !== undefined) {
         updatedUser.reraNumber = editableData[userId].reraNumber;
       }
+      if (editableData[userId]?.role !== undefined) {
+        updatedUser.role = editableData[userId].role;
+      }
+      if (editableData[userId]?.managerId !== undefined) {
+        updatedUser.managerId = editableData[userId].managerId;
+      }
+      
 
       console.log("Payload Sent to API:", updatedUser); // Check if visibleFields and assignedProjects are correct
 
@@ -2780,6 +2843,8 @@ const Sidebar = () => {
               phone: updatedData.phone ?? originalUser.phone,
               email: updatedData.email ?? originalUser.email,
               gstNumber: updatedData.gstNumber ?? originalUser.gstNumber,
+              role: updatedData.role ?? originalUser.role,
+              managerId: updatedData.managerId ?? originalUser.managerId,
               reraNumber: updatedData.reraNumber ?? originalUser.reraNumber,
               visibleFields: updatedData.visibleFields ?? originalUser.visibleFields,
               assignedProjects: updatedData.assignedProjects ?? originalUser.assignedProjects
@@ -2944,6 +3009,8 @@ const Sidebar = () => {
               const email = form.email.value.trim();
               const gstNumber = form.gstNumber.value.trim();
               const reraNumber = form.reraNumber.value.trim();
+              const managerId = form.managerId.value;
+              const role = form.role.value;
               const assignedProjects = Array.from(form.querySelectorAll('input[name="assignedProjects"]:checked'))
                 .map((project) => project.value);
               const visibleFields = Array.from(form.querySelectorAll('input[name="visibleFields"]:checked'))
@@ -2966,12 +3033,13 @@ const Sidebar = () => {
                 name,
                 phone,
                 password,
-                role: 'executive',
+                role,
                 assignedProjects,
                 visibleFields,
                 ...(email && { email }), // Only include if provided
                 ...(gstNumber && { gstNumber }),
                 ...(reraNumber && { reraNumber }),
+                ...(managerId && { managerId }),
               };
 
               try {
@@ -2992,17 +3060,18 @@ const Sidebar = () => {
 
                 // Reset the form fields after successful registration
                 form.reset();
+                setRole("");
               } catch (error) {
                 console.error('Error:', error);
                 alert('Failed to register executive');
               }
             }}
           >
-            <h2 className="text-2xl font-bold lg:text-4xl mb-7">Register CP</h2>
+            <h2 className="text-2xl font-bold lg:text-4xl mb-7">Register Manager/User</h2>
 
             <div>
               <label htmlFor="name" className="text-gray-700 block">
-                CP Name
+                User/Manager Name
               </label>
               <input
                 type="text"
@@ -3012,6 +3081,59 @@ const Sidebar = () => {
                 className="border-b border-b-black w-full block focus:outline-none mt-1"
               />
             </div>
+            {/* <div>
+              <label htmlFor="managerId" className="text-gray-700 block">Assign Manager (Optional)</label>
+              <select
+                id="managerId"
+                name="managerId"
+                className="border-b border-b-black w-full block focus:outline-none mt-1"
+              >
+                <option value="">Select a Manager</option>
+                {users
+                  .filter((user) => user.role === "manager")
+                  .map((manager) => (
+                    <option key={manager._id} value={manager._id}>
+                      {manager.name} 
+                    </option>
+                  ))}
+              </select>
+            </div> */}
+            <div>
+              <label htmlFor="role" className="text-gray-700 block">Select Role</label>
+              <select
+                id="role"
+                name="role"
+                required
+                className="border-b border-b-black w-full block focus:outline-none mt-1"
+                value={role}
+                onChange={handleRoleChange}
+              >
+                <option value="">Select a Role</option>
+                <option value="executive">Executive</option>
+                <option value="manager">Manager</option>
+              </select>
+            </div>
+            {role === 'executive' && (
+        <div>
+          <label htmlFor="managerId" className="text-gray-700 block">Assign Manager</label>
+          <select
+            id="managerId"
+            name="managerId"
+            className="border-b border-b-black w-full block focus:outline-none mt-1"
+          >
+            <option value="">Select a Manager</option>
+            {users
+              .filter((user) => user.role === 'manager')
+              .map((manager) => (
+                <option key={manager._id} value={manager._id}>
+                  {manager.name}
+                </option>
+              ))}
+          </select>
+        </div>
+      )}
+
+
 
             <div>
               <label htmlFor="phone" className="text-gray-700 block">
@@ -3115,11 +3237,30 @@ const Sidebar = () => {
         return (
           <div className="bg-white p-6 lg:p-12 rounded-xl shadow-lg">
             <h2 className="text-3xl font-bold mb-6">User Management</h2>
+            <div className="mb-6 flex items-center space-x-4">
+                      <label htmlFor="roleFilter" className="font-medium text-gray-700">Filter by Role:</label>
+                      <select
+                        id="roleFilter"
+                        value={selectedRoleFilter}
+                        onChange={(e) => setSelectedRoleFilter(e.target.value)}
+                        className="border border-gray-300 rounded-md px-3 py-2"
+                      >
+                        <option value="all">All</option>
+                        <option value="executive">User</option>
+                        <option value="manager">Manager</option>
+                      </select>
+                    </div>
+            
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {Array.isArray(users) && users.length > 0 ? (
-                users.filter(user => user.role === "executive").map(user => (
+                users
+                .filter(user => selectedRoleFilter === "all" || user.role === selectedRoleFilter)
+                .map(user => (
+              
                   <div key={user._id} className="p-4 border rounded-lg shadow relative bg-gray-50">
                     {/* Edit Icon */}
+                    
+
                     <div className="absolute top-3 right-3 flex space-x-3">
                       <button
                         onClick={() => {
@@ -3130,10 +3271,12 @@ const Sidebar = () => {
                               name: user.name ?? "",  // Ensure string fallback
                               phone: user.phone ?? "",
                               email: user.email ?? "",
+                              role : user.role ?? "executive",
                               gstNumber: user.gstNumber ?? "",
                               reraNumber: user.reraNumber ?? "",
                               visibleFields: new Set(user.visibleFields || []),
-                              assignedProjects: [...(user.assignedProjects || [])]
+                              assignedProjects: [...(user.assignedProjects || [])],
+                              managerId: user.managerId ?? "",
                             }
                           }));
                         }}
@@ -3179,6 +3322,38 @@ const Sidebar = () => {
                         className={`border-b w-full bg-transparent ${user._id === editingUser ? 'border-black' : 'border-gray-300'}`}
                       />
                     </div>
+                    {(editingUser === user._id ? editableData[user._id]?.role : user.role) === "executive" && (
+                      <div className="mb-2">
+                        <label className="text-gray-700 block">Manager</label>
+
+                        {editingUser === user._id ? (
+                          <select
+                            value={editableData[user._id]?.managerId ?? user.managerId ?? ""}
+                            onChange={(e) => handleEditChange(user._id, "managerId", e.target.value)}
+                            className="border-b border-black w-full bg-transparent"
+                          >
+                            <option value="">Select a Manager</option>
+                            {users
+                              .filter((u) => u.role === "manager" && u._id !== user._id)
+                              .map((manager) => (
+                                <option key={manager._id} value={manager._id}>
+                                  {manager.name}
+                                </option>
+                              ))}
+                          </select>
+                        ) : (
+                          <>
+                            <p className="text-gray-800">
+                              {users.find((u) => u._id === user.managerId)?.name || "Not Assigned"}
+                            </p>
+                          </>
+                        )}
+                      </div>
+                    )}
+
+
+
+
 
                     <div className="mb-2">
                       <label className="text-gray-700 block">Phone</label>
@@ -3248,10 +3423,24 @@ const Sidebar = () => {
                     )}
 
 
-                    <div className="mb-2">
-                      <label className="text-gray-700 block">Role</label>
-                      <span className="text-lg font-semibold">{user.role === "executive" ? "CP" : ""}</span>
-                    </div>
+                      <div className="mb-2">
+                        <label className="text-gray-700 block">Role</label>
+                        {user._id === editingUser ? (
+                          <select
+                            value={editableData[user._id]?.role || user.role}
+                            onChange={(e) => handleEditChange(user._id, 'role', e.target.value)}
+                            className="border-b w-full bg-transparent border-black"
+                          >
+                            <option value="executive">Executive</option>
+                            <option value="manager">Manager</option>
+                          </select>
+                        ) : (
+                          <span className="text-lg font-semibold">
+                            {user.role === "executive" ? "User" : user.role === "manager" ? "Manager" : "Admin"}
+                          </span>
+                        )}
+                      </div>
+
                     {/* Assigned Projects Dropdown */}
                     {/* Assigned Projects Checkbox */}
                     <div className="mb-4">
@@ -3311,6 +3500,10 @@ const Sidebar = () => {
             </div>
           </div>
         );
+      case 'userActivity':
+        return (
+          <UserActivity/>
+        )  
 
       case 'broker':
         return <BrokerDetails />;
@@ -3412,6 +3605,12 @@ const Sidebar = () => {
                 className={`text-gray-600 flex flex-row items-center justify-between hover:bg-gray-300 px-2 py-2 rounded cursor-pointer ${activeTab === 'users' ? 'bg-gray-300' : ''}`}
               >
                 Edit Users<CiEdit />
+              </li>
+              <li
+                onClick={() => setActiveTab('userActivity')}
+                className={`text-gray-600 flex flex-row items-center justify-between hover:bg-gray-300 px-2 py-2 rounded cursor-pointer ${activeTab === 'userActivity' ? 'bg-gray-300' : ''}`}
+              >
+                Users Activity<CiEdit />
               </li>
               {/* <li
                 onClick={() => setActiveTab('broker')}

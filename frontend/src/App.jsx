@@ -21,7 +21,7 @@ function App() {
         <Route
           path="/mainpage"
           element={
-            <PrivateRoute allowedRoles={["admin", "executive"]}>
+            <PrivateRoute allowedRoles={["admin", "executive","manager"]}>
               <MainPage />
             </PrivateRoute>
           }
@@ -29,7 +29,7 @@ function App() {
         <Route
           path="/sukoon"
           element={
-            <PrivateRoute allowedRoles={["admin", "executive"]}>
+            <PrivateRoute allowedRoles={["admin", "executive","manager"]}>
               <Sukoon />
             </PrivateRoute>
           }
@@ -37,7 +37,7 @@ function App() {
         <Route
           path="/linkpage"
           element={
-            <PrivateRoute allowedRoles={["admin", "executive"]}>
+            <PrivateRoute allowedRoles={["admin", "executive","manager"]}>
               <LinkPage />
             </PrivateRoute>
           }
@@ -57,7 +57,7 @@ function App() {
         <Route
           path="/home"
           element={
-            <PrivateRoute allowedRoles={["executive"]}>
+            <PrivateRoute allowedRoles={["executive","manager"]}>
               <Home />
             </PrivateRoute>
           }

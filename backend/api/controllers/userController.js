@@ -52,7 +52,7 @@ export const getAllUsers = async (req, res) => {
     // Ensure only admins can fetch all users
 
     // Fetch all users with selected fields
-    const users = await ROFUser.find().select("name phone email reraNumber gstNumber  role assignedProjects visibleFields");
+    const users = await ROFUser.find().select("name phone email reraNumber gstNumber  role assignedProjects visibleFields managerId");
 
     return res.status(200).json({ users });
   } catch (error) {
@@ -60,12 +60,124 @@ export const getAllUsers = async (req, res) => {
     return res.status(500).json({ message: "Failed to fetch users.", error: error.message || error });
   }
 };
+export const getUserActivity = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Verify the user exists
+    const user = await ROFUser.findById(userId).select("name role phone");
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    // Fetch all sale requests by the user
+    const allSaleRequests = await SaleRequest.find({ createdBy: userId }).populate("inventoryId");
+
+    // Separate based on status
+    const soldInventories = allSaleRequests
+      .filter(req => req.status === "Approved")
+      .map(req => ({
+        inventory: req.inventoryId,
+        requestType: req.requestType,
+        saleRequestId: req._id,
+        approvedAt: req.updatedAt || req.createdAt,
+      }));
+
+    const holdingInventories = allSaleRequests
+      .filter(req => req.status === "Hold")
+      .map(req => ({
+        inventory: req.inventoryId,
+        requestType: req.requestType,
+        saleRequestId: req._id,
+        heldAt: req.createdAt,
+      }));
+
+    return res.status(200).json({
+      user: {
+        id: user._id,
+        name: user.name,
+        role: user.role,
+        phone: user.phone,
+      },
+      activitySummary: {
+        totalSaleRequests: allSaleRequests.length,
+        soldCount: soldInventories.length,
+        holdingCount: holdingInventories.length,
+      },
+      soldInventories,
+      holdingInventories,
+    });
+
+  } catch (error) {
+    console.error("Error in getUserActivity:", error);
+    return res.status(500).json({ message: "Failed to fetch user activity.", error: error.message || error });
+  }
+};
+export const getAllUsersActivity = async (req, res) => {
+  try {
+    // Get all users
+    const users = await ROFUser.find({}).select("name role phone managerId");
+
+    const activityData = [];
+
+    for (const user of users) {
+      // Get all sale requests for each user
+      const allSaleRequests = await SaleRequest.find({ createdBy: user._id }).populate("inventoryId");
+
+      const soldInventories = allSaleRequests
+        .filter(req => req.status === "Approved")
+        .map(req => ({
+          inventory: req.inventoryId,
+          requestType: req.requestType,
+          saleRequestId: req._id,
+          approvedAt: req.updatedAt || req.createdAt,
+        }));
+
+      const holdingInventories = allSaleRequests
+        .filter(req => req.status === "Pending")
+        .map(req => ({
+          inventory: req.inventoryId,
+          requestType: req.requestType,
+          saleRequestId: req._id,
+          heldAt: req.createdAt,
+        }));
+
+      activityData.push({
+        user: {
+          id: user._id.toString(),
+          name: user.name,
+          role: user.role,
+          phone: user.phone,
+          managerId: user.managerId?.toString() || null,
+        },
+        activitySummary: {
+          totalSaleRequests: allSaleRequests.length,
+          soldCount: soldInventories.length,
+          holdingCount: holdingInventories.length,
+        },
+        soldInventories,
+        holdingInventories,
+      });
+    }
+
+    return res.status(200).json({
+      totalUsers: users.length,
+      activities: activityData,
+    });
+
+  } catch (error) {
+    console.error("Error in getAllUsersActivity:", error);
+    return res.status(500).json({ message: "Failed to fetch all user activities.", error: error.message || error });
+  }
+};
+
+
 
 
 
 export const registerUser = async (req, res) => {
   try {
-    const { name, phone, password, role, assignedProjects, visibleFields, email, gstNumber, reraNumber  } = req.body;
+    const { name, phone, password, role, assignedProjects, visibleFields, email, gstNumber, reraNumber,managerId,  } = req.body;
 
     // Check for missing fields
     if (!name || !phone || !password || !role) {
@@ -83,9 +195,11 @@ export const registerUser = async (req, res) => {
 
     // Ensure the 'Status' field is always included for executives
     const alwaysVisibleFields = ["type", "unitNumber", "floor", "actualArea", "saleableArea", "plcCharges", "status"];
-    const fieldsForExecutive = role === "executive" ? [...new Set([...(visibleFields || []), ...alwaysVisibleFields])] : [];
+    const fieldsForExecutive = ["executive", "manager"].includes(role) ? [...new Set([...(visibleFields || []), ...alwaysVisibleFields])] : [];
 
-
+    if (role !== "executive" && managerId) {
+      return res.status(400).json({ message: "Only executives can have a manager assigned." });
+    } 
     // Create a new user
     const newUser = new ROFUser({
       name,
@@ -95,8 +209,9 @@ export const registerUser = async (req, res) => {
       reraNumber: reraNumber || undefined,
       password: hashedPassword,
       role,
-      assignedProjects: role === "executive" ? assignedProjects || [] : [], // Assign projects only if role is executive
+      assignedProjects: ["executive", "manager"].includes(role) ? assignedProjects || [] : [],
       visibleFields: fieldsForExecutive, // Ensure 'Status' is included
+      managerId: role === "executive" ? managerId || null : null,
     });
 
     await newUser.save();
@@ -190,7 +305,7 @@ export const getUser = async (req, res) => {
   try {
     const userId = req.user.id; // Assuming user ID is passed in the request via JWT middleware
 
-    const user = await ROFUser.findById(userId).select("name phone email reraNumber gstNumber role assignedProjects visibleFields");
+    const user = await ROFUser.findById(userId).select("name phone email reraNumber gstNumber role assignedProjects visibleFields managerId");
 
     if (!user) {
       return res.status(404).json({ message: "User not found." });
@@ -210,6 +325,7 @@ export const getUser = async (req, res) => {
         gstNumber: user.gstNumber,
         reraNumber: user.reraNumber,
         role: user.role,
+        managerId: user.managerId,
         assignedProjects: user.assignedProjects,
         visibleFields: finalVisibleFields, // Ensures required fields are always included
       },
@@ -274,7 +390,7 @@ export const updateUserByAdmin = async (req, res) => {
     console.log("Request body:", JSON.stringify(req.body, null, 2));
 
     const { userId } = req.params;
-    const { name, phone, password, role, assignedProjects, visibleFields, email, gstNumber, reraNumber  } = req.body;
+    const { name, phone, password, role, assignedProjects, visibleFields, email, gstNumber, reraNumber, managerId,  } = req.body;
 
     // Debug what was received
     console.log(`VisibleFields received:`, visibleFields);
@@ -287,6 +403,7 @@ export const updateUserByAdmin = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found." });
     }
+    const previousRole = user.role;
 
     if (name) user.name = name;
     if (phone) user.phone = phone;
@@ -295,9 +412,24 @@ export const updateUserByAdmin = async (req, res) => {
     if (reraNumber !== undefined) user.reraNumber = reraNumber;
     if (password) user.password = await bcrypt.hash(password, 10);
     if (role) user.role = role;
+    if (managerId !== undefined) {
+      user.managerId = managerId || null;
+    }
+
+
+    if (previousRole === "manager" && role === "executive") {
+      await ROFUser.updateMany(
+        { managerId: user._id },
+        { $unset: { managerId: "" } }
+      );
+    }
+
+    if (previousRole === "executive" && role === "manager") {
+      user.managerId = null; // Managers should not have a managerId
+    }
 
     // Modified condition to check for any truthy value
-    if (user.role === "executive") {
+    if (["executive", "manager"].includes(user.role)) {
       if (assignedProjects !== undefined) {
         user.assignedProjects = assignedProjects;
       }

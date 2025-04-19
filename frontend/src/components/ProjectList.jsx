@@ -6,6 +6,7 @@ import { RiArrowLeftSLine } from "react-icons/ri";
 import { FaHome } from 'react-icons/fa';
 import { RxCross2 } from "react-icons/rx";
 import EditSelfInfo from './EditSelfInfo';
+import ManagerUserActivity from './ManagerUserActivity';
 
 // Initialize the WebSocket connection
 const socket = io(`${import.meta.env.VITE_API_BASE_URL}`); // Replace with your backend URL
@@ -561,6 +562,7 @@ const ProjectList = () => {
 
 
   const userName = localStorage.getItem("userName") || "User";
+  const userRole = localStorage.getItem("role") || "Role";
   const [fileNames, setFileNames] = useState({});
 
   // Render content based on the active tab
@@ -569,7 +571,9 @@ const ProjectList = () => {
       case 'projects':
         return renderProjectsTable();
       case 'self-info' : 
-        return <EditSelfInfo/>  
+        return <EditSelfInfo/> 
+      case "users-activity" :
+        return <ManagerUserActivity/>   
       case 'logout':
         return <h2 className="text-2xl font-bold">You have logged out.</h2>;
       default:
@@ -618,6 +622,17 @@ const ProjectList = () => {
           >
             Profile Update
           </li>
+          {userRole === 'manager' && (
+            <li
+              onClick={() => setActiveTab('users-activity')}
+              className={`text-gray-600 hover:bg-gray-300 px-2 py-2 rounded cursor-pointer ${
+                activeTab === 'users-activity' ? 'bg-gray-300' : ''
+              }`}
+            >
+              Employees Activity
+            </li>
+          )}
+
           <li
             onClick={handleLogout}
             className="rounded text-gray-600 cursor-pointer hover:bg-gray-300 px-2 py-2"

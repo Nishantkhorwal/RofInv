@@ -134,7 +134,8 @@ const LoginPage = () => {
             className="border border-gray-300 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-500 px-4 py-2"
           >
             <option value="admin">HO</option>
-            <option value="executive">CP</option>
+            <option value="executive">User</option>
+            <option value="manager">Manager</option>
           </select>
         </div>
 

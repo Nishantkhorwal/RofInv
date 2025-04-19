@@ -34,9 +34,14 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["admin", "executive"],
+      enum: ["admin", "executive","manager"],
       required: true,
     },
+    managerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'ROFUser',
+      default: null,
+    },    
     assignedProjects: [
       {
         type: mongoose.Schema.Types.ObjectId,
