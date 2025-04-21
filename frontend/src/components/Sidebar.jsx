@@ -3009,7 +3009,7 @@ const Sidebar = () => {
               const email = form.email.value.trim();
               const gstNumber = form.gstNumber.value.trim();
               const reraNumber = form.reraNumber.value.trim();
-              const managerId = form.managerId.value;
+              const managerId = form.managerId ? form.managerId.value : "";
               const role = form.role.value;
               const assignedProjects = Array.from(form.querySelectorAll('input[name="assignedProjects"]:checked'))
                 .map((project) => project.value);
