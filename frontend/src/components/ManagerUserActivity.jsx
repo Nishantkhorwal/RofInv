@@ -5,7 +5,7 @@ const ManagerUserActivity = () => {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
-  const activitiesPerPage = 3;
+  const activitiesPerPage = 4;
 
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -52,8 +52,9 @@ const ManagerUserActivity = () => {
 
   const indexOfLastActivity = currentPage * activitiesPerPage;
   const indexOfFirstActivity = indexOfLastActivity - activitiesPerPage;
-  const currentActivities = activities.slice(indexOfFirstActivity, indexOfLastActivity);
-  const totalPages = Math.ceil(activities.length / activitiesPerPage);
+  const currentActivities = filteredByName.slice(indexOfFirstActivity, indexOfLastActivity);
+  const totalPages = Math.ceil(filteredByName.length / activitiesPerPage);
+
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6">
@@ -69,10 +70,10 @@ const ManagerUserActivity = () => {
           className="w-full px-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
-      {filteredByName.length === 0 ? (
+      {currentActivities.length === 0 ? (
         <div className="text-center text-gray-500 py-10">No such employee found.</div>
       ) : (
-        filteredByName.map(({ user, activitySummary, soldInventories = [], holdingInventories = [] }) => (
+        currentActivities.map(({ user, activitySummary, soldInventories = [], holdingInventories = [] }) => (
           <>
 
             <div key={user.id} className="mb-10 bg-white rounded-xl shadow-md p-6 border">
