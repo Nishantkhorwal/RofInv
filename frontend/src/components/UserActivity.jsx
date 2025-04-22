@@ -135,6 +135,10 @@ const UserActivity = () => {
                 <p className="text-xl font-bold text-yellow-600">{activitySummary.holdingCount}</p>
                 <p className="text-sm text-gray-600">On Hold</p>
               </div>
+              <div className="bg-red-50 rounded-lg p-4 text-center">
+                <p className="text-xl font-bold text-red-600">{activitySummary.totalSaleRequests - activitySummary.soldCount} </p>
+                <p className="text-sm text-gray-600">Rejected</p>
+              </div>
             </div>
 
             {/* Sold Inventories */}

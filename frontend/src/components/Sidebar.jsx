@@ -23,7 +23,7 @@ import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 import BrokerDetails from './BrokerDetails';
 import SaleForm from './SaleForm';
-import { FiEdit, FiPlus, FiSave, FiTrash } from 'react-icons/fi';
+import { FiActivity, FiEdit, FiPlus, FiSave, FiTrash } from 'react-icons/fi';
 import RequestEditForm from './RequestEditForm';
 import { PaymentForm } from './PaymentForm';
 import UserActivity from './UserActivity';
@@ -3610,7 +3610,7 @@ const Sidebar = () => {
                 onClick={() => setActiveTab('userActivity')}
                 className={`text-gray-600 flex flex-row items-center justify-between hover:bg-gray-300 px-2 py-2 rounded cursor-pointer ${activeTab === 'userActivity' ? 'bg-gray-300' : ''}`}
               >
-                Users Activity<CiEdit />
+                Users Activity<FiActivity />
               </li>
               {/* <li
                 onClick={() => setActiveTab('broker')}
