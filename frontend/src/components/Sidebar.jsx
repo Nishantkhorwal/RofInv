@@ -3109,7 +3109,7 @@ const Sidebar = () => {
                 onChange={handleRoleChange}
               >
                 <option value="">Select a Role</option>
-                <option value="executive">Executive</option>
+                <option value="executive">CP(User)</option>
                 <option value="manager">Manager</option>
               </select>
             </div>
