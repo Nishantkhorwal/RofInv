@@ -3431,12 +3431,12 @@ const Sidebar = () => {
                             onChange={(e) => handleEditChange(user._id, 'role', e.target.value)}
                             className="border-b w-full bg-transparent border-black"
                           >
-                            <option value="executive">Executive</option>
+                            <option value="executive">CP(User)</option>
                             <option value="manager">Manager</option>
                           </select>
                         ) : (
                           <span className="text-lg font-semibold">
-                            {user.role === "executive" ? "User" : user.role === "manager" ? "Manager" : "Admin"}
+                            {user.role === "executive" ? "CP(User)" : user.role === "manager" ? "Manager" : "Admin"}
                           </span>
                         )}
                       </div>
