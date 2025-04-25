@@ -120,15 +120,20 @@ const Sidebar = () => {
         setLoading(true);
         setError(null);
         try {
-          // Retrieve token from localStorage
-          const token = localStorage.getItem('token');
-
-          // Check if the token exists
-          if (!token) {
-            throw new Error('No authentication token found');
+          // Check if the data is cached
+          const cachedData = localStorage.getItem('projectInventories');
+          let projectInventories = cachedData ? JSON.parse(cachedData) : [];
+          
+          // If cached data exists, don't make the API request (initial load, else re-fetch when required)
+          if (cachedData) {
+            console.log('Using cached project inventories');
+            setProjectInventories(projectInventories);
           }
-
-          // Make the API request with the Authorization header
+          
+          const token = localStorage.getItem('token');
+          if (!token) throw new Error('No authentication token found');
+          
+          // Make the API request if the data isn't cached or if something has changed
           const response = await fetch(`${API_BASE_URL}/api/project/inventories`, {
             method: 'GET',
             headers: {
@@ -136,36 +141,36 @@ const Sidebar = () => {
               'Content-Type': 'application/json',
             },
           });
-
-          if (!response.ok) {
-            throw new Error('Failed to fetch inventories');
-          }
+  
+          if (!response.ok) throw new Error('Failed to fetch inventories');
+          
           const data = await response.json();
-          setProjectInventories(data.projectInventories || []);
+          projectInventories = data.projectInventories || [];
+  
+          // Update the state and cache only if the new data is different from the cached data
+          if (JSON.stringify(projectInventories) !== cachedData) {
+            console.log('New inventories fetched, updating cache');
+            setProjectInventories(projectInventories);
+            localStorage.setItem('projectInventories', JSON.stringify(projectInventories)); // Update cache
+          }
         } catch (err) {
           setError(err.message);
         } finally {
           setLoading(false);
         }
       };
-
+  
       fetchInventories();
     }
-
+  
     if (activeTab === 'projects' || activeTab === 'requests' || activeTab === 'dashboard') {
       const fetchSaleRequests = async () => {
         setLoading(true);
         setError(null);
         try {
-          // Retrieve token from localStorage
           const token = localStorage.getItem('token');
-
-          // Check if the token exists
-          if (!token) {
-            throw new Error('No authentication token found');
-          }
-
-          // Make the API request with the Authorization header
+          if (!token) throw new Error('No authentication token found');
+          
           const response = await fetch(`${API_BASE_URL}/api/project/request`, {
             method: 'GET',
             headers: {
@@ -173,33 +178,49 @@ const Sidebar = () => {
               'Content-Type': 'application/json',
             },
           });
-
-          if (!response.ok) {
-            throw new Error('Failed to fetch sale requests');
-          }
+  
+          if (!response.ok) throw new Error('Failed to fetch sale requests');
+          
           const data = await response.json();
-
-          // Log to check the data structure
-
-          const saleRequests = data.saleRequests || []; // Get the array or an empty array if undefined
-          console.log("sale request", saleRequests);
+          const saleRequests = data.saleRequests || [];
+  
+          console.log("Sale requests data:", saleRequests);
           setHasPendingRequests(saleRequests.some(request => request.status === 'Pending'));
-          console.log(hasPendingRequests);
-
+  
           const pending = saleRequests.filter(request => request.status === 'Pending');
           const approved = saleRequests.filter(request => request.status === 'Approved');
           const rejected = saleRequests.filter(request => request.status === 'Rejected');
           setSaleRequests({ pending, approved, rejected });
+  
+          // Check if the inventory status needs to be updated
+          if (pending.length > 0) {
+            // Update the inventory status in the projectInventories state
+            setProjectInventories((prevInventories) => {
+              return prevInventories.map((project) => {
+                project.inventory = project.inventory.map((inv) => {
+                  const pendingRequest = pending.find((request) => request.inventoryId._id === inv._id);
+                  if (pendingRequest) {
+                    return { ...inv, status: 'Hold' }; // Change status to "Hold" if pending request exists
+                  }
+                  return inv;
+                });
+                return project;
+              });
+            });
+            // Update the cache after changing the status
+            localStorage.setItem('projectInventories', JSON.stringify(projectInventories));
+          }
         } catch (err) {
           setError(err.message);
         } finally {
           setLoading(false);
         }
       };
-
+  
       fetchSaleRequests();
     }
   }, [activeTab]);
+  
 
 
   // Render sale requests in a table
@@ -1577,6 +1598,14 @@ const Sidebar = () => {
       });
     });
 
+    console.log("Cache before updating:", localStorage.getItem('projectInventories'));
+
+    // Update the cache immediately after the optimistic UI update
+    localStorage.setItem('projectInventories', JSON.stringify(projectInventories));
+
+    // Check the cache after updating
+    console.log("Cache after updating:", localStorage.getItem('projectInventories'));
+
     try {
       const response = await fetch(`${API_BASE_URL}/api/project/inventory/${inventoryId}/update-status`, {
         method: "PUT",
@@ -1587,6 +1616,7 @@ const Sidebar = () => {
       const result = await response.json();
       if (response.ok && result.success) {
         console.log(`Status updated to ${newStatus} successfully.`);
+        localStorage.setItem('projectInventories', JSON.stringify(projectInventories));
       } else {
         // If the API call fails, revert the optimistic change
         setProjectInventories((prevInventories) => {
@@ -1697,16 +1727,21 @@ const Sidebar = () => {
         const updated = await res.json();
 
         // Update local state
-        setProjectInventories((prevProjects) =>
-          prevProjects.map((project) => {
+        setProjectInventories((prevProjects) => {
+          const updatedProjects = prevProjects.map((project) => {
             return {
               ...project,
               inventory: project.inventory.map((inv) =>
                 inv._id === id ? { ...inv, ...updatedData } : inv
               ),
             };
-          })
-        );
+          });
+    
+          // Update the cache with the new inventory data
+          localStorage.setItem('projectInventories', JSON.stringify(updatedProjects));
+    
+          return updatedProjects; // Return the updated state for re-render
+        });
 
       } catch (err) {
         console.error("Error updating inventory:", err);
