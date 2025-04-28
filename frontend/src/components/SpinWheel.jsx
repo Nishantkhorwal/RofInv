@@ -1,6 +1,7 @@
 import { useState } from "react";
 import confetti from "canvas-confetti";
 import { FaTrophy,  FaAward } from "react-icons/fa"; 
+import { FaArrowsSpin } from "react-icons/fa6";
 
 const prizes = [
   "Apple I-Pad",
@@ -55,33 +56,53 @@ const SpinWheel = () => {
     window.location.reload();
   };
 
-  return (
-    <div className="flex flex-col items-center min-h-screen justify-center  relative">
-      <div className="relative w-[100%] h-[100%] lg:w-[50%] lg:h-[50%]">
-        {/* Pointer */}
-        <div className="absolute top-[-20px] left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-8 border-r-8 border-b-16 border-b-red-500 z-10" />
+  const handleOverlayClick = (e) => {
+    // Only reset if user clicks the background overlay (not the popup box itself)
+    if (e.target === e.currentTarget) {
+      handleReset();
+    }
+  };
 
-        {/* Wheel */}
-        <div
-          className="w-full h-full "
-          
-        >
-          <img
-            style={{
-                transform: `rotate(${rotation}deg)`
-            }}
-            onClick={handleSpin}
-            src="/wheel5.png"
-            alt="Wheel"
-            className="w-full h-full cursor-pointer rounded-full overflow-hidden transition-transform duration-[4s] ease-out"
-          />
+  return (
+    <div  className="flex flex-col  min-h-screen py-8 bg-white items-center justify-center relative">
+      {/* Main content */}
+      <div className="flex flex-col lg:flex-row items-center justify-center w-full gap-4 px-4">
+        {/* Left: Logo */}
+        <div className=" lg:mb-0">
+          <img src="/greenlogo.png" alt="Logo" className="h-14 md:h-24 lg:h-20" />
+        </div>
+
+        {/* Center: Wheel */}
+        <div className="relative w-[100%] h-[100%] max-w-[400px] max-h-[400px] md:max-w-[600px] md:max-h-[600px]">
+          {/* Pointer */}
+          <div className="absolute top-[-20px] left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-8 border-r-8 border-b-16 border-b-red-500 z-10" />
+          {/* Wheel */}
+          <div className="w-full h-full">
+            <img
+              onClick={handleSpin}
+              src="/wheel5.png"
+              alt="Wheel"
+              style={{ transform: `rotate(${rotation}deg)` }}
+              className="w-full h-full cursor-pointer rounded-full overflow-hidden transition-transform duration-[4s] ease-out"
+            />
+          </div>
+        </div>
+
+        {/* Right: Spin & Win */}
+        <div className="flex flex-col  items-center gap-2 mt-2 lg:mt-0">
+          <div className="flex americana gap-2 items-center text-6xl md:text-6xl lg:text-7xl font-extrabold text-green-600 drop-shadow-lg">
+            <p>Spin</p>
+          </div>
+          <h1 className="text-6xl americana md:text-6xl lg:text-8xl font-extrabold text-green-600 drop-shadow-lg animate-bounce">
+            And Win!
+          </h1>
         </div>
       </div>
 
       {/* 🎉 Winning Popup */}
       {wonPrize && (
-  <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-start md:justify-center z-50 p-4">
-    <div className="bg-gradient-to-br ms-5 md:ms-0 from-yellow-100 via-white to-yellow-100 border-4 md:border-8 border-yellow-400 rounded-2xl md:rounded-3xl shadow-2xl p-6 md:p-10 text-center animate-pulse w-full max-w-[300px] md:max-w-[500px]">
+  <div onClick={handleOverlayClick} className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-start md:justify-center z-50 p-4">
+    <div className="bg-gradient-to-br ms-5 md:ms-0 from-yellow-100 via-white to-yellow-100 border-4 md:border-8 border-yellow-400 rounded-2xl md:rounded-3xl shadow-2xl p-6 md:p-10 text-center animate-pulse w-full max-w-[320px] md:max-w-[500px]">
       
       {/* Icon-based Congratulations */}
       <h2 className="text-2xl md:text-4xl lg:text-5xl font-extrabold text-green-600 mb-4 md:mb-6 flex flex-col items-center gap-2 animate-bounce">
@@ -103,12 +124,12 @@ const SpinWheel = () => {
       </p>
 
       {/* Claim Button */}
-      <button
+      {/* <button
         onClick={handleReset}
         className="bg-gradient-to-r from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 text-white px-6 py-3 md:px-10 md:py-4 rounded-full font-bold text-xl md:text-2xl transition-transform transform hover:scale-105 shadow-lg"
       >
         Claim Prize
-      </button>
+      </button> */}
 
     </div>
   </div>
