@@ -81,7 +81,7 @@ const SpinWheel = () => {
       {/* 🎉 Winning Popup */}
       {wonPrize && (
   <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-start md:justify-center z-50 p-4">
-    <div className="bg-gradient-to-br ms-5 md:ms-0 from-yellow-100 via-white to-yellow-100 border-4 md:border-8 border-yellow-400 rounded-2xl md:rounded-3xl shadow-2xl p-6 md:p-10 text-center animate-pulse w-full max-w-[350px] md:max-w-[500px]">
+    <div className="bg-gradient-to-br ms-5 md:ms-0 from-yellow-100 via-white to-yellow-100 border-4 md:border-8 border-yellow-400 rounded-2xl md:rounded-3xl shadow-2xl p-6 md:p-10 text-center animate-pulse w-full max-w-[300px] md:max-w-[500px]">
       
       {/* Icon-based Congratulations */}
       <h2 className="text-2xl md:text-4xl lg:text-5xl font-extrabold text-green-600 mb-4 md:mb-6 flex flex-col items-center gap-2 animate-bounce">
