@@ -749,9 +749,8 @@ const Sidebar = () => {
       // Apply search filter
       const filteredRequests = requests.filter((request) => {
         const customerName = request.customerName || request.inventoryId?.customerName || '';
-
-        // Search filter
-        const matchesSearch = customerName.toLowerCase().includes(requestSearchTerm.toLowerCase());
+        const unitNumber = request.inventoryId?.unitNumber;
+        const matchesSearch = customerName.toLowerCase().includes(requestSearchTerm.toLowerCase()) || unitNumber.toLowerCase().includes(requestSearchTerm.toLowerCase());
 
         // Broker filter
         const matchesBroker = !selectedBrokerFilter || request.createdBy?._id === selectedBrokerFilter;
@@ -1496,7 +1495,7 @@ const Sidebar = () => {
 
           <input
             type="text"
-            placeholder="Search customer..."
+            placeholder="Search Unit Or Customer..."
             value={requestSearchTerm}
             onChange={(e) => setRequestSearchTerm(e.target.value)}
             className="border rounded-lg shadow-sm px-4 py-2"
@@ -1814,13 +1813,13 @@ const Sidebar = () => {
           </div>
 
           {/* Search Bar */}
-          <input
+          {/* <input
             type="text"
             placeholder="Search projects..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="border rounded-lg shadow-sm px-4 py-2"
-          />
+          /> */}
         </div>
 
         {/* Message for No Project Matches */}

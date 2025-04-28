@@ -9,6 +9,7 @@ import PrivateRoute from "./components/PrivateRoute"; // Import PrivateRoute
 import MainPage from "./components/MainPage";
 import LinkPage from "./pages/LinkPage";
 import Sukoon from "./pages/Sukoon";
+import SpinWheel from "./components/SpinWheel";
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
       <Routes>
         {/* Public Route */}
         <Route path="/" element={<LoginPage />} />
+        <Route path="/spinwheel" element={<SpinWheel />} />
 
         {/* Protected Route for Both Admin and Executive */}
         <Route
