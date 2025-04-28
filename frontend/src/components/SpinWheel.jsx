@@ -1,5 +1,6 @@
 import { useState } from "react";
 import confetti from "canvas-confetti";
+import { FaTrophy,  FaAward } from "react-icons/fa"; 
 
 const prizes = [
   "Apple I-Pad",
@@ -56,7 +57,7 @@ const SpinWheel = () => {
 
   return (
     <div className="flex flex-col items-center min-h-screen justify-center  relative">
-      <div className="relative w-[100%] h-[100%] lg:w-[50%] lg:h-[50%]">
+      <div className="relative w-[100%] h-[100%] lg:w-[55%] lg:h-[55%]">
         {/* Pointer */}
         <div className="absolute top-[-20px] left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-8 border-r-8 border-b-16 border-b-red-500 z-10" />
 
@@ -81,18 +82,34 @@ const SpinWheel = () => {
       {wonPrize && (
   <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
     <div className="bg-gradient-to-br from-yellow-100 via-white to-yellow-100 border-8 border-yellow-400 rounded-3xl shadow-2xl p-10 text-center animate-pulse max-w-[90%] w-[500px]">
-      <h2 className="text-3xl lg:text-5xl font-extrabold text-green-600 mb-6 animate-bounce">🎉 Congratulations! 🎉</h2>
       
-      <p className="text-5xl lg:text-7xl font-bold text-pink-600 mb-8">
+      {/* Icon-based Congratulations */}
+      <h2 className="text-3xl lg:text-5xl font-extrabold text-green-600 mb-6 flex flex-col items-center gap-2 animate-bounce">
+        <div className="flex gap-4 text-yellow-500 text-6xl">
+          <FaTrophy />
+          
+          <FaAward />
+        </div>
+        Congratulations!
+      </h2>
+
+      <p className="text-3xl text-pink-600 font-semibold mb-4">
+        You've Won
+      </p>
+
+      {/* Prize */}
+      <p className="text-5xl lg:text-8xl font-bold text-pink-600 mb-8">
         {wonPrize}
       </p>
-      
+
+      {/* Button */}
       <button
         onClick={handleReset}
         className="bg-gradient-to-r from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 text-white px-10 py-4 rounded-full font-bold text-2xl transition-transform transform hover:scale-105 shadow-lg"
       >
         Claim Prize
       </button>
+
     </div>
   </div>
 )}
