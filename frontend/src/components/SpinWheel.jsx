@@ -57,7 +57,7 @@ const SpinWheel = () => {
 
   return (
     <div className="flex flex-col items-center min-h-screen justify-center  relative">
-      <div className="relative w-[100%] h-[100%] lg:w-[55%] lg:h-[55%]">
+      <div className="relative w-[100%] h-[100%] lg:w-[50%] lg:h-[50%]">
         {/* Pointer */}
         <div className="absolute top-[-20px] left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-8 border-r-8 border-b-16 border-b-red-500 z-10" />
 
