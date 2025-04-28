@@ -80,32 +80,32 @@ const SpinWheel = () => {
 
       {/* 🎉 Winning Popup */}
       {wonPrize && (
-  <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-    <div className="bg-gradient-to-br from-yellow-100 via-white to-yellow-100 border-8 border-yellow-400 rounded-3xl shadow-2xl p-10 text-center animate-pulse max-w-[90%] w-[500px]">
+  <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-start md:justify-center z-50 p-4">
+    <div className="bg-gradient-to-br ms-5 md:ms-0 from-yellow-100 via-white to-yellow-100 border-4 md:border-8 border-yellow-400 rounded-2xl md:rounded-3xl shadow-2xl p-6 md:p-10 text-center animate-pulse w-full max-w-[350px] md:max-w-[500px]">
       
       {/* Icon-based Congratulations */}
-      <h2 className="text-3xl lg:text-5xl font-extrabold text-green-600 mb-6 flex flex-col items-center gap-2 animate-bounce">
-        <div className="flex gap-4 text-yellow-500 text-6xl">
+      <h2 className="text-2xl md:text-4xl lg:text-5xl font-extrabold text-green-600 mb-4 md:mb-6 flex flex-col items-center gap-2 animate-bounce">
+        <div className="flex gap-2 md:gap-4 text-yellow-500 text-4xl md:text-6xl">
           <FaTrophy />
-          
           <FaAward />
         </div>
         Congratulations!
       </h2>
 
-      <p className="text-3xl text-pink-600 font-semibold mb-4">
+      {/* Small "You've won" Text */}
+      <p className="text-lg md:text-2xl text-pink-600 font-semibold mb-2 md:mb-4">
         You've Won
       </p>
 
-      {/* Prize */}
-      <p className="text-5xl lg:text-8xl font-bold text-pink-600 mb-8">
+      {/* Big Prize Text */}
+      <p className="text-3xl md:text-5xl lg:text-7xl font-bold text-pink-600 mb-6 md:mb-8 break-words">
         {wonPrize}
       </p>
 
-      {/* Button */}
+      {/* Claim Button */}
       <button
         onClick={handleReset}
-        className="bg-gradient-to-r from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 text-white px-10 py-4 rounded-full font-bold text-2xl transition-transform transform hover:scale-105 shadow-lg"
+        className="bg-gradient-to-r from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 text-white px-6 py-3 md:px-10 md:py-4 rounded-full font-bold text-xl md:text-2xl transition-transform transform hover:scale-105 shadow-lg"
       >
         Claim Prize
       </button>
@@ -113,6 +113,7 @@ const SpinWheel = () => {
     </div>
   </div>
 )}
+
 
     </div>
   );
