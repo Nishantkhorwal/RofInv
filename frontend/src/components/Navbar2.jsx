@@ -124,8 +124,8 @@ function Navbar() {
               <a href='#club'><li className='cursor-pointer'>Club</li></a>
               <a href='#sitemap'><li className='cursor-pointer'>Site Plan</li></a>
               <a href='#locationmap'><li className='cursor-pointer'>Location Map</li></a>
-              <a href={localStorage.getItem("role") === "admin" ? "/sidebar" : "/home"}>
-                <li className='cursor-pointer'>Inventory</li>
+              <a className='text-xl' href={localStorage.getItem("role") === "admin" ? "/sidebar" : "/home"}>
+                <li className='cursor-pointer '>Inventory</li>
               </a>
 
               <li>

@@ -60,21 +60,21 @@ function Navbar() {
         <img src="images2/logo.png" alt="Logo" className=  ' w-20 lg:w-32' />
       </div>
       <div className="hidden lg:block">
-        <ul className="flex flex-row text-sm text-white poppins space-x-8">
-          <a href='/linkpage'><li className='cursor-pointer'>Home</li></a>
-          <a href='#about'><li className='cursor-pointer'>About</li></a>
+        <ul className="flex flex-row items-center text-sm  poppins space-x-8">
+          <a href='/linkpage'><li className='cursor-pointer text-gray-200'>Home</li></a>
+          <a href='#about'><li className='cursor-pointer text-gray-200'>About</li></a>
           
-          <a href='#location'><li className='cursor-pointer'>Location</li></a>
-          <a href='#amenities'><li className='cursor-pointer'>Amenities</li></a>
-          <a href='#club'><li className='cursor-pointer'>Club</li></a>
-          <a href='#sitemap'><li className='cursor-pointer'>Site Plan</li></a>
-          <a href='#locationmap'><li className='cursor-pointer'>Location Map</li></a>
-          <a href={localStorage.getItem("role") === "admin" ? "/sidebar" : "/home"}>
-           <li className='cursor-pointer'>Inventory</li>
+          <a href='#location'><li className='cursor-pointer text-gray-200'>Location</li></a>
+          <a href='#amenities'><li className='cursor-pointer text-gray-200'>Amenities</li></a>
+          <a href='#club'><li className='cursor-pointer text-gray-200'>Club</li></a>
+          <a href='#sitemap'><li className='cursor-pointer text-gray-200'>Site Plan</li></a>
+          <a href='#locationmap'><li className='cursor-pointer text-gray-200'>Location Map</li></a>
+          <a className='bg-gray-200 px-3 ' href={localStorage.getItem("role") === "admin" ? "/sidebar" : "/home"}>
+           <li className='cursor-pointer hover:text-gray-700 text-base   text-black'>Inventory</li>
         </a>
         <div className="relative">
                   <li className='flex justify-between cursor-pointer items-center' onClick={toggleDropdown}>
-                    <p className='me-2  '>Download</p> <MdKeyboardArrowDown />
+                    <p className='me-2  text-gray-200'>Download</p> <MdKeyboardArrowDown className='text-gray-200' />
                   </li>
                 
 
@@ -124,8 +124,8 @@ function Navbar() {
           <a href='#club'><li className='cursor-pointer'>Club</li></a>
           <a href='#sitemap'><li className='cursor-pointer'>Site Plan</li></a>
           <a href='#locationmap'><li className='cursor-pointer'>Location Map</li></a>
-          <a href={localStorage.getItem("role") === "admin" ? "/sidebar" : "/home"}>
-          <li className='cursor-pointer'>Inventory</li>
+          <a className='text-xl' href={localStorage.getItem("role") === "admin" ? "/sidebar" : "/home"}>
+          <li className='cursor-pointer '>Inventory</li>
           </a>
 
               <li>

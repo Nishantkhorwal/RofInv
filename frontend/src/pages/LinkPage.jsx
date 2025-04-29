@@ -9,7 +9,7 @@ function LinkPage() {
   const role = localStorage.getItem("role");
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-[#FFFDD0]">
+    <div className="flex justify-center items-center min-h-screen bg-gray-300">
       <div className="flex flex-col md:flex-row items-center gap-12 relative">
         {links.map((link, index) => (
           <div key={index} className="flex flex-col items-center gap-4">

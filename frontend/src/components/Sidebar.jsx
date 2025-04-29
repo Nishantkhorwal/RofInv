@@ -3659,7 +3659,7 @@ const Sidebar = () => {
 
         {/* Main Content */}
         <div
-          className={`flex-grow overflow-y-scroll bg-[#FAD99D] transition-all duration-300 ${isSidebarOpen ? 'lg:pl-8' : 'px-6 lg:px-0 lg:pl-16'}`}
+          className={`flex-grow overflow-y-scroll bg-gray-300 transition-all duration-300 ${isSidebarOpen ? 'lg:pl-8' : 'px-6 lg:px-0 lg:pl-16'}`}
         >
           <div className="p-4">{renderContent()}</div>
         </div>
