@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import confetti from "canvas-confetti";
 import { FaTrophy,  FaAward } from "react-icons/fa"; 
-import { FaArrowsSpin } from "react-icons/fa6";
+import { FaHandPointer } from "react-icons/fa";
 
 const prizes = [
   "Apple I-Pad",
@@ -15,6 +15,13 @@ const SpinWheel = () => {
   const [rotation, setRotation] = useState(0);
   const [spinning, setSpinning] = useState(false);
   const [wonPrize, setWonPrize] = useState(null);
+  const [showHint, setShowHint] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setShowHint(false), 4000);
+    return () => clearTimeout(timer);
+  }, []);
+
 
   const handleSpin = () => {
     if (spinning) return;
@@ -28,6 +35,7 @@ const SpinWheel = () => {
 
     setTimeout(() => {
       setSpinning(false);
+      setShowHint(false);
       const actualDegree = (rotation + randomAngle) % 360;
       const prizeIndex = Math.floor(actualDegree / (360 / prizes.length));
       const prize = prizes[prizes.length - 1 - prizeIndex]; // reverse because rotation is clockwise
@@ -132,6 +140,12 @@ const SpinWheel = () => {
       </button> */}
 
     </div>
+  </div>
+)}
+{showHint && (
+  <div className="fixed bottom-[30%]  left-1/2 transform -translate-x-1/2 z-50 bg-yellow-200 text-green-800 border-2 border-yellow-400 px-6 py-3 rounded-full shadow-lg flex items-center gap-2 animate-bounce text-sm md:text-xl font-semibold">
+    <FaHandPointer className="text-2xl md:text-3xl animate-pulse" />
+    Click to win
   </div>
 )}
 

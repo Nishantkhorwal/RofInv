@@ -2264,7 +2264,7 @@ const Sidebar = () => {
     // State to store the selected project
 
 
-    const userName = localStorage.getItem("userName") || "Manish Mittal";
+    const userName = localStorage.getItem("userName") || "Aditya";
 
     // Filtered projectInventories based on the chosen project
     const selectedProjectData = chosenProject
@@ -2378,7 +2378,7 @@ const Sidebar = () => {
             </div>
             <div className='relative'>
               <div className='flex flex-row cursor-pointer items-center' onClick={toggleDropdown}>
-                <p className='font-semibold me-2'>{userName}</p>
+                <p className='font-semibold me-2'>{userName === "Admin" ? "Aditya" : "Aditya"}</p>
                 <FaCircleUser className='text-2xl' />
               </div>
               {dropdownVisible && (
