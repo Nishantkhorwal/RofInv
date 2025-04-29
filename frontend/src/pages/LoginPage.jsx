@@ -55,7 +55,7 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="flex bg-[#FFFDD0] justify-center items-center min-h-screen">
+    <div className="flex bg-gray-300 justify-center items-center min-h-screen">
       <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
         <h1 className="text-3xl text-center font-bold mb-6">ROF Pravasa</h1>
         
