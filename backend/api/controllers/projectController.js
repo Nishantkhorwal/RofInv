@@ -8,11 +8,21 @@ import mongoose from 'mongoose';
 import puppeteer from 'puppeteer';
 import fs from 'fs';
 import path from 'path';
+import twilio from 'twilio';
 
 
 // Controller to create a project with its inventory
 import multer from 'multer';
 import XLSX from 'xlsx';
+import dotenv from 'dotenv';
+dotenv.config(); 
+const accountSid = process.env.TWILIO_ACCOUNT_SID // Your SID
+const authToken = process.env.TWILIO_AUTH_TOKEN // Your auth token
+const fromNumber = process.env.TWILIO_FROM_NUMBER;
+const toNumber = process.env.ADMIN_PHONE_NUMBER;
+const client = twilio(accountSid, authToken);
+
+
 
 
 // Set up multer for file uploads
@@ -309,11 +319,21 @@ export const holdInventoryItem = async (req, res, io) => {
 
       await saleRequest.save();
 
+
+      
+
       io.emit("requestUpdated", {
         requestId: saleRequest._id,
         status: 'Pending',
         inventoryId: updatedItem._id,
         inventoryStatus: updatedItem.status,
+      });
+      // This should print your Auth Token or `undefined`
+
+      await client.messages.create({
+        from: fromNumber,
+        to: toNumber,
+        body: `🛑 New Sale Request Created\n\n📛 Customer: ${customerName}\n🏢 Unit: ${updatedItem.unitNumber || 'N/A'}\n🕒 Time: ${new Date().toLocaleString()}`
       });
 
       return res.json({ 

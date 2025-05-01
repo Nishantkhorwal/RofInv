@@ -53,6 +53,9 @@ const userSchema = new mongoose.Schema(
         type: String, // List of fields like 'towerNumber', 'unitNumber', etc.
       },
     ],
+    // passwordChangedAt: {
+    //   type: Date,
+    // },
     createdAt: {
       type: Date,
       default: Date.now,
