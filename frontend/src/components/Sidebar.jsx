@@ -857,6 +857,7 @@ const Sidebar = () => {
                   <th className="px-4 py-2">Unit</th>
                   <th className="px-4 py-2">Floor</th>
                   <th className="px-4 py-2">Status</th>
+                  <th className="px-4 py-2">Created At</th>
                   {category === 'Approved' && <th className="px-4 py-2">Paid %</th>}
                   {category === 'Approved' && <th className="px-4 py-2">BBA</th>}
                   {category === 'Approved' && <th className="px-4 py-2">Cheques</th>}
@@ -973,6 +974,18 @@ const Sidebar = () => {
                           </div>
                         </td>
                       )}
+                      {request.status === 'Pending' && (
+                        <td className="px-4 py-4 text-center cursor-pointer">
+                          {new Date(request.createdAt).toLocaleString('en-US', {
+                            day: 'numeric',
+                            month: 'long',
+                            hour: 'numeric',
+                            minute: '2-digit',
+                            hour12: true
+                          })}
+                        </td>
+                      )}
+
 
                       {request.status === 'Pending' && (
                         <td className="text-center px-4 py-4">
