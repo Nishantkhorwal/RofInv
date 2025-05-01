@@ -857,7 +857,7 @@ const Sidebar = () => {
                   <th className="px-4 py-2">Unit</th>
                   <th className="px-4 py-2">Floor</th>
                   <th className="px-4 py-2">Status</th>
-                  <th className="px-4 py-2">Created At</th>
+                  {category === 'Pending' && <th className="px-4 py-2">Created At</th>}
                   {category === 'Approved' && <th className="px-4 py-2">Paid %</th>}
                   {category === 'Approved' && <th className="px-4 py-2">BBA</th>}
                   {category === 'Approved' && <th className="px-4 py-2">Cheques</th>}
