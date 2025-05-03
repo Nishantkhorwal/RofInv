@@ -21,6 +21,7 @@ import { RxCross2 } from "react-icons/rx";
 
 import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
+import { ChevronDown, Building2, CheckCircle2, CircleX, Clock, ArrowRight, Home, User, LogOut, X } from "lucide-react";
 import BrokerDetails from './BrokerDetails';
 import SaleForm from './SaleForm';
 import { FiActivity, FiEdit, FiPlus, FiSave, FiTrash } from 'react-icons/fi';
@@ -52,6 +53,7 @@ const Sidebar = () => {
   const [userLoading, setUserLoading] = useState(false);
   const [selectedRoleFilter, setSelectedRoleFilter] = useState("all");
   const [role, setRole] = useState(''); // State to track selected role
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const handleRoleChange = (e) => {
     setRole(e.target.value); // Update the role state on change
@@ -2369,137 +2371,214 @@ const Sidebar = () => {
 
     return (
       <>
-        <div className='pe-20'>
-          <div className='flex flex-row justify-between items-center py-5'>
-            <div className='flex flex-row justify-between items-center space-x-6'>
-              <h1 className='text-3xl font-bold uppercase'>Dashboard</h1>
+        <div className="min-h-screen  p-4">
+      <div className="mx-auto max-w-7xl">
+        {/* HEADER */}
+        <header className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+            <select
+              value={chosenProject}
+              onChange={(e) => setChosenProject(e.target.value)}
+              className="w-[180px] border border-gray-300 rounded px-3 py-2 text-sm"
+            >
+              <option value="">All Projects</option>
+              {projectInventories.map((project) => (
+                <option key={project.projectName} value={project.projectName}>
+                  {project.projectName}
+                </option>
+              ))}
+            </select>
+          </div>
 
-              <div className="relative">
-                <select
-                  value={chosenProject || ''}
-                  onChange={(e) => setChosenProject(e.target.value)}
-                  className="border-2 p-2 rounded-lg"
+          <div className="relative">
+            <button
+              onClick={() => setDropdownOpen(!dropdownOpen)}
+              className="flex items-center gap-2 px-3 py-2 bg-white border rounded shadow text-sm"
+            >
+              <span>{userName}</span>
+              <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-sm font-medium">
+                {userName.charAt(0)}
+              </div>
+              <ChevronDown className="h-4 w-4" />
+            </button>
+            {dropdownOpen && (
+              <div className="absolute right-0 mt-2 w-40 bg-white border rounded shadow">
+                <button
+                  className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm"
+                  onClick={() => {
+                    setActiveTab("profile");
+                    setDropdownOpen(false);
+                  }}
                 >
-                  <option value="">All Projects</option>
-                  {projectInventories.map((project) => (
-                    <option key={project.projectName} value={project.projectName}>
-                      {project.projectName}
-                    </option>
-                  ))}
-                </select>
+                  <User className="h-4 w-4" />
+                  Profile
+                </button>
+                <button
+                  className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm"
+                  onClick={handleLogout}
+                >
+                  <LogOut className="h-4 w-4" />
+                  Logout
+                </button>
               </div>
-            </div>
-            <div className='relative'>
-              <div className='flex flex-row cursor-pointer items-center' onClick={toggleDropdown}>
-                <p className='font-semibold me-2'>{userName === "Admin" ? "Aditya" : "Aditya"}</p>
-                <FaCircleUser className='text-2xl' />
-              </div>
-              {dropdownVisible && (
-                <div className='bg-white border border-gray-300 rounded-lg shadow-lg w-48 absolute mt-2 right-0'>
-                  <ul>
-                    <li onClick={() => setActiveTab('profile')} className='cursor-pointer hover:bg-gray-100 px-4 py-2'>Profile</li>
-                    <li onClick={handleLogout} className='cursor-pointer hover:bg-gray-100 px-4 py-2'>Logout</li>
-                  </ul>
+            )}
+          </div>
+        </header>
+
+        {/* METRIC CARDS */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+          {[
+            { label: "Total Properties", value: totalProperties, icon: <Building2 className="text-primary" />, bg: "bg-primary/10" },
+            { label: "Sold Properties", value: soldProperties, icon: <CheckCircle2 className="text-green-600" />, bg: "bg-green-100" },
+            { label: "Unsold Properties", value: unsoldProperties, icon: <CircleX className="text-red-600" />, bg: "bg-red-100" },
+            { label: "Hold Properties", value: holdProperties, icon: <Clock className="text-amber-600" />, bg: "bg-amber-100" },
+          ].map((metric, idx) => (
+            <div key={idx} className="border rounded p-4 bg-white shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500">{metric.label}</p>
+                  <p className="text-2xl font-bold">{metric.value}</p>
                 </div>
-              )}
-            </div>
-
-          </div>
-
-          <div className='py-5'>
-            <div className='flex flex-row w-full space-x-6'>
-              <div className='flex flex-col bg-white rounded-lg shadow-lg w-[25%] px-10 py-5'>
-                <FaHome className='text-4xl text-yellow-500 mb-4' />
-                <p className='text-sm font-semibold mb-5 uppercase'>Total Properties</p>
-                <p className='text-lg font-bold'>{totalProperties}</p>
-              </div>
-              <div className='flex flex-col bg-white rounded-lg shadow-lg w-[25%] px-10 py-5'>
-                <TbHomeDollar className='text-4xl text-yellow-500 mb-4' />
-                <p className='text-sm font-semibold mb-5 uppercase'>Sold Properties</p>
-                <p className='text-lg font-bold'>{soldProperties}</p>
-              </div>
-              <div className='flex flex-col bg-white rounded-lg shadow-lg w-[25%] px-10 py-5'>
-                <TbHomeX className='text-4xl text-yellow-500 mb-4' />
-                <p className='text-sm font-semibold mb-5 uppercase'>Unsold Properties</p>
-                <p className='text-lg font-bold'>{unsoldProperties}</p>
-              </div>
-              <div className='flex flex-col bg-white rounded-lg shadow-lg w-[25%] px-10 py-5'>
-                <TbHomeCheck className='text-4xl text-yellow-500 mb-4' />
-                <p className='text-sm font-semibold mb-5 uppercase'>Hold Properties</p>
-                <p className='text-lg font-bold'>{holdProperties}</p>
+                <div className={`rounded-full p-2 ${metric.bg}`}>{metric.icon}</div>
               </div>
             </div>
-          </div>
+          ))}
+        </div>
 
-          <div className="py-5">
-            <div className="flex bg-white justify-center rounded-lg shadow-lg px-10 py-10">
-              <Line data={soldChartData} options={{ responsive: true }} />
+        {/* CHARTS */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          {[{ title: "Sales Trend", data: soldChartData }, { title: "Hold Trend", data: holdChartData }].map((chart, idx) => (
+            <div key={idx} className={`col-span-1 ${idx === 0 ? "md:col-span-2" : ""} border rounded bg-white shadow-sm`}>
+              <div className="px-4 pt-4 font-medium text-base">{chart.title}</div>
+              <div className="p-4 h-[200px]">
+                <Line
+                  data={chart.data}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                      y: {
+                        beginAtZero: true,
+                        ticks: { precision: 0 },
+                      },
+                    },
+                    plugins: { legend: { display: false } },
+                  }}
+                />
+              </div>
             </div>
-          </div>
+          ))}
+        </div>
 
-          <div className='flex flex-row items-center py-4 space-x-4'>
-            <div className="bg-white rounded-lg shadow-lg w-[60%] px-2 py-4">
-              <table className="table-auto text-center w-full mb-5">
-                <thead>
+        {/* RECENT PROPERTIES AND REQUESTS */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Recent Properties */}
+          <div className="md:col-span-2 border rounded bg-white shadow-sm">
+            <div className="flex items-center justify-between px-4 py-3">
+              <h2 className="font-medium">Recent Properties</h2>
+              <button onClick={() => setActiveTab("projects")} className="text-sm text-blue-600 flex items-center">
+                View All <ArrowRight className="ml-1 h-4 w-4" />
+              </button>
+            </div>
+            <div className="overflow-auto max-h-[180px]">
+              <table className="w-full text-sm">
+                <thead className="border-b">
                   <tr>
-                    <th className="px-4 py-2">Project Name</th>
-                    <th className="px-4 py-2">Area (Sq. Yard)</th>
-                    <th className="px-4 py-2">Floor</th>
-                    <th className="px-4 py-2">Unit</th>
-                    <th className="px-4 py-2">PLC</th>
+                    {["Project", "Area", "Floor", "Unit", "PLC", "Status"].map((head, idx) => (
+                      <th key={idx} className="text-left px-4 py-2 font-medium text-gray-600">
+                        {head}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {firstProperties.map((project) =>
-                    project.inventory.slice(0, 1).map((item) => (
-                      <tr key={item._id}>
+                  {selectedProjectData.flatMap((project) =>
+                    project.inventory.slice(0, 3).map((item) => (
+                      <tr key={item._id} className="border-b hover:bg-gray-50">
                         <td className="px-4 py-2">{project.projectName}</td>
                         <td className="px-4 py-2">{item.areaSqYard}</td>
                         <td className="px-4 py-2">{item.floor}</td>
                         <td className="px-4 py-2">{item.unitNumber}</td>
                         <td className="px-4 py-2">{item.PLC}</td>
+                        <td className="px-4 py-2">
+                          <span
+                            className={`px-2 py-1 text-xs rounded font-medium ${
+                              item.status === "Sold"
+                                ? "bg-green-100 text-green-800"
+                                : item.status === "Hold"
+                                ? "bg-amber-100 text-amber-800"
+                                : "bg-gray-100 text-gray-800"
+                            }`}
+                          >
+                            {item.status}
+                          </span>
+                        </td>
                       </tr>
                     ))
                   )}
                 </tbody>
               </table>
-              <div className='flex flex-row justify-center items-center'><p onClick={() => setActiveTab('projects')} className='text-blue-700 cursor-pointer'>All Projects</p></div>
-            </div>
-            <div className='bg-white rounded-lg shadow-lg w-[40%] px-2 py-4'>
-              <Line data={holdChartData} options={{ responsive: true }} />
             </div>
           </div>
-          {hasPendingRequests && isNotificationVisible && (
-            <div className="bg-yellow-500 rounded shadow-lg text-white bottom-4 cursor-pointer fixed font-bold left-4 px-4 py-2">
-              <div className="flex justify-between items-center px-3 py-4">
-                <div>
-                  <p>You have pending requests:</p>
-                  <ul className="text-sm">
-                    {recentRequests.map((request, index) => (
-                      <li className="mb-4" key={index}>
-                        <p>Request {index + 1}</p>
-                        <p>User : {request.createdBy.name}</p>
-                        <p>{request.inventoryId.customerName || 'Unknown Customer'} - Unit ({request.inventoryId.unitNumber || 'N/A'})</p>
-                      </li>
-                    ))}
-                  </ul>
-                  <div onClick={() => setActiveTab('requests')} className="flex text-blue-700 items-center mt-2">
-                    <p className="me-1">All requests</p>
-                    <GoArrowRight />
-                  </div>
-                </div>
-                <button
-                  className="text-white text-xl absolute font-bold right-2 top-0"
-                  onClick={() => setIsNotificationVisible(false)} // Hide notification on click
-                >
-                  &times; {/* This is the cross symbol */}
-                </button>
-              </div>
+
+          {/* Pending Requests */}
+          <div className="border rounded bg-white shadow-sm">
+            <div className="flex items-center justify-between px-4 py-3">
+              <h2 className="font-medium">Pending Requests</h2>
+              <button onClick={() => setActiveTab("requests")} className="text-sm text-blue-600 flex items-center">
+                View All <ArrowRight className="ml-1 h-4 w-4" />
+              </button>
             </div>
-          )}
-
-
+            <div className="overflow-auto max-h-[180px] px-4">
+              {recentRequests.length > 0 ? (
+                recentRequests.map((request, index) => (
+                  <div key={request._id} className="border rounded p-2 mb-2">
+                    <div className="flex justify-between items-center">
+                      <span className="bg-amber-50 text-amber-700 px-2 py-1 text-xs rounded">Pending</span>
+                      <span className="text-xs text-gray-500">Request #{index + 1}</span>
+                    </div>
+                    <div className="mt-2 text-sm font-medium">
+                      {request.inventoryId.customerName || "Unknown Customer"}
+                    </div>
+                    <div className="flex justify-between text-xs text-gray-500 mt-1">
+                      <div className="flex items-center gap-1">
+                        <Home className="h-3 w-3" /> Unit {request.inventoryId.unitNumber || "N/A"}
+                      </div>
+                      <div>By: {request.createdBy.name}</div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-sm text-gray-500 h-[180px] flex items-center justify-center">No pending requests</div>
+              )}
+            </div>
+          </div>
         </div>
+
+        {/* Notification Alert */}
+        {hasPendingRequests && isNotificationVisible && (
+          <div className="fixed bottom-4 right-4 bg-amber-50 border border-amber-200 rounded-lg p-4 w-80 shadow-lg">
+            <div className="flex justify-between items-center">
+              <h3 className="text-amber-800 font-semibold">Pending Requests</h3>
+              <button onClick={() => setIsNotificationVisible(false)} className="h-6 w-6">
+                <X className="h-4 w-4 text-gray-600" />
+              </button>
+            </div>
+            <div className="mt-2 text-sm text-amber-800">
+              You have {saleRequests.pending.length} pending requests:
+              <ul className="mt-2 space-y-1 text-xs">
+                {recentRequests.map((req, i) => (
+                  <li key={i}>
+                    <strong>{req.inventoryId.customerName || "Unknown"}</strong> • Unit: {req.inventoryId.unitNumber || "N/A"}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
+      </div>
+    </div> 
       </>
     );
   };
@@ -2644,80 +2723,90 @@ const Sidebar = () => {
 
 
     return (
-      <div className="flex justify-center min-h-screen" >
-        <div className='flex justify-center items-center relative'>
+      <div className="flex justify-center items-center min-h-screen bg-gray-50 px-4">
+  <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-6 relative">
+    <MdModeEditOutline
+      className="absolute top-4 right-4 text-gray-600 hover:text-blue-600 cursor-pointer transition"
+      onClick={() => setIsEditing(true)}
+      size={20}
+    />
 
+    <div className="flex justify-center mb-4">
+      <FaCircleUser className="text-6xl text-gray-400" />
+    </div>
 
+    <h1 className="text-center text-2xl font-semibold text-gray-800 mb-2">Profile</h1>
 
-          <div className='flex flex-col bg-white rounded-lg shadow-xl px-20 py-10 relative'>
-            <MdModeEditOutline className='absolute cursor-pointer right-4 top-4'
-              onClick={() => setIsEditing(true)} />
-            <div className='flex justify-center items-center'><FaCircleUser className='text-8xl mb-8' /></div>
-            <div>
-              <div className='flex justify-center items-center'><h1 className="text-3xl font-semibold">Profile</h1></div>
+    {profileError && <p className="text-red-600 text-sm text-center mb-2">{profileError}</p>}
+    {profileSuccess && <p className="text-green-600 text-sm text-center mb-2">{profileSuccess}</p>}
 
-              {profileError && <p className="text-red-600">{profileError}</p>}
-              {profileSuccess && <p className="text-green-600">{profileSuccess}</p>}
-
-              <div className="mt-4 profile-update-form">
-                {isEditing ? (
-                  <>
-                    <label className="block mb-2">Name</label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={profileName}
-                      onChange={handleProfileInputChange}
-                      className="border p-2 w-full mb-4"
-                    />
-
-                    <label className="block mb-2">Phone</label>
-                    <input
-                      type="text"
-                      name="phone"
-                      value={profilePhone}
-                      onChange={handleProfileInputChange}
-                      className="border p-2 w-full mb-4"
-                    />
-                    <div className='relative'>
-                      <label className="block mb-2">Password</label>
-                      <input
-                        type={showPassword ? "text" : "password"}
-                        name="password"
-                        value={profilePassword}
-                        onChange={handleProfileInputChange}
-                        className="border p-2 w-full mb-4"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="text-gray-600 absolute right-4 top-11"
-                      >
-                        {showPassword ? <FaEyeSlash /> : <FaEye />}
-                      </button>
-                    </div>
-
-                    <button
-                      onClick={handleProfileUpdate}
-                      disabled={profileLoading}
-                      className={`bg-blue-500 text-white p-2 rounded ${profileLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    >
-                      {profileLoading ? 'Updating...' : 'Update Profile'}
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <div className="profile-info">
-                      <p className='text-xl mb-2'><strong>Name:</strong> {profileName}</p>
-                      <p className='text-xl'><strong>Phone:</strong> {profilePhone}</p>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
+    <div className="space-y-4">
+      {isEditing ? (
+        <>
+          <div>
+            <label className="block text-sm text-gray-700 mb-1">Name</label>
+            <input
+              type="text"
+              name="name"
+              value={profileName}
+              onChange={handleProfileInputChange}
+              className="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            />
           </div>
+
+          <div>
+            <label className="block text-sm text-gray-700 mb-1">Phone</label>
+            <input
+              type="text"
+              name="phone"
+              value={profilePhone}
+              onChange={handleProfileInputChange}
+              className="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            />
+          </div>
+
+          <div className="relative">
+            <label className="block text-sm text-gray-700 mb-1">Password</label>
+            <input
+              type={showPassword ? "text" : "password"}
+              name="password"
+              value={profilePassword}
+              onChange={handleProfileInputChange}
+              className="w-full border rounded-md px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-9 text-gray-500"
+            >
+              {showPassword ? <FaEyeSlash /> : <FaEye />}
+            </button>
+          </div>
+
+          <button
+            onClick={handleProfileUpdate}
+            disabled={profileLoading}
+            className={`w-full mt-2 bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600 transition ${
+              profileLoading ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
+          >
+            {profileLoading ? 'Updating...' : 'Update Profile'}
+          </button>
+        </>
+      ) : (
+        <div className="space-y-2">
+          <p className="text-gray-700 text-base">
+            <strong>Name:</strong> {profileName}
+          </p>
+          <p className="text-gray-700 text-base">
+            <strong>Phone:</strong> {profilePhone}
+          </p>
         </div>
-      </div>
+      )}
+    </div>
+  </div>
+</div>
+
     );
   };
 
