@@ -251,6 +251,12 @@ export const loginUser = async (req, res) => {
       return res.status(401).json({ message: "Invalid password." });
     }
 
+
+    if (user.role !== 'admin') {
+      return res.status(403).json({ message: "Normal Users are temporarily closed." });
+    }
+
+
     // Check if the role matches
     if (user.role !== role) {
       return res
