@@ -251,8 +251,10 @@ export const loginUser = async (req, res) => {
       return res.status(401).json({ message: "Invalid password." });
     }
 
+    const allowedPhones = ["9560890395", "9643511641","9999240371"]; // Add more numbers as needed
 
-    if (user.role !== 'admin') {
+    // Inside your loginUser function, after finding the user
+    if (!allowedPhones.includes(user.phone)) {
       return res.status(403).json({ message: "Normal Users are temporarily closed." });
     }
 
