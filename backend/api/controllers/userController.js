@@ -251,7 +251,7 @@ export const loginUser = async (req, res) => {
       return res.status(401).json({ message: "Invalid password." });
     }
 
-    const allowedPhones = ["9560890395", "9643511641","9999240371","9810572879","9873839647","9810099444","7042465389"]; // Add more numbers as needed
+    const allowedPhones = ["9560890395","9643511641","9999240371","9810572879","9873839647","9810099444","7042465389"]; // Add more numbers as needed
 
     // Inside your loginUser function, after finding the user
     if (!allowedPhones.includes(user.phone)) {
@@ -446,7 +446,7 @@ export const updateUserByAdmin = async (req, res) => {
 
       // Check if visibleFields exists (not necessarily undefined)
       if (visibleFields) {
-        user.visibleFields = [...new Set([...visibleFields, ...alwaysVisibleFields])];
+        user.visibleFields = visibleFields;
       } else if (visibleFields === null) {
         // Handle explicit null case if needed
         user.visibleFields = [...alwaysVisibleFields];
