@@ -14,6 +14,11 @@ const transporter = nodemailer.createTransport({
 
 export const createEnquiry = async (req, res) => {
   const { name, phoneNumber, email } = req.body;
+   const phoneRegex = /^[6-9]\d{9}$/; // Accepts 10-digit numbers starting with 6-9 (common in India)
+
+  if (!phoneRegex.test(phoneNumber)) {
+    return res.status(400).json({ error: 'Invalid phone number. Please enter a 10-digit number.' });
+  }
 
   try {
     const newEnquiry = new LandingEnquiry({ name, phoneNumber, email });
