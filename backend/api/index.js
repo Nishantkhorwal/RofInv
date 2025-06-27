@@ -35,6 +35,7 @@ const allowedOrigins = [
   "https://rofconnect.com",
   "https://landingpage.rofpravasa.com",
   "https://rofinventorymanagement.netlify.app",
+  "https://landingpravasa.netlify.app",
 ];
 
 app.use(cors({
