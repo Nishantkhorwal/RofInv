@@ -21,7 +21,7 @@ export const createEnquiry = async (req, res) => {
 
     const mailOptions = {
       from: process.env.EMAIL_USER,
-      to: `${process.env.ADMIN_EMAIL}, khorwalnishant@gmail.com`, // Receiver
+      to: `${process.env.ADMIN_EMAIL}, pravasa88@gmail.com`, // Receiver
       subject: 'New Enquiry Received',
       html: `
         <h3>New Enquiry Details</h3>
