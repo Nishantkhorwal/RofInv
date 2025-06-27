@@ -38,13 +38,16 @@ const allowedOrigins = [
   "https://landingpravasa.netlify.app",
 ];
 
-app.use(cors({
+const corsOptions = {
   origin: allowedOrigins,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   credentials: true,
   allowedHeaders: ["Content-Type", "Authorization"],
   optionsSuccessStatus: 200,
-}));
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 // Middleware
 app.use(express.json({ limit: '50mb' }));
