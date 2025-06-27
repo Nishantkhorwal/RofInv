@@ -33,7 +33,7 @@ const server = createServer(app);
 // CORS Configuration (Must be on Top)
 const allowedOrigins = [
   "https://rofconnect.com",
-  "https://landingpage.pravasa.com",
+  "https://landingpage.rofpravasa.com",
   "https://rofinventorymanagement.netlify.app",
   "http://localhost:5173",
   "http://localhost:5174",
