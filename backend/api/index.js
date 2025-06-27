@@ -6,7 +6,6 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import projectRoutes from './routes/projectRoute.js';
 import userRoutes from './routes/userRoute.js';
-import welcomeRoutes from './routes/welcomeRoute.js';
 import enquiryRoutes from './routes/enquiryRoute.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -57,7 +56,7 @@ app.use(cookieParser());
 // Routes
 app.use('/api/project', projectRoutes);
 app.use('/api/user', userRoutes);
-app.use('/api/welcome', welcomeRoutes);
+// app.use('/api/welcome', welcomeRoutes);
 app.use('/api/enquiry', enquiryRoutes);
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
