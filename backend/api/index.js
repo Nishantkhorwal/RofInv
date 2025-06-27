@@ -6,6 +6,8 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import projectRoutes from './routes/projectRoute.js';
 import userRoutes from './routes/userRoute.js';
+import welcomeRoutes from './routes/welcomeRoute.js';
+import enquiryRoutes from './routes/enquiryRoute.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createServer } from 'http';
@@ -13,7 +15,7 @@ import { Server } from 'socket.io';
 import { expireOldSaleRequests } from './controllers/projectController.js';
 import cron from 'node-cron';
 
-// import Inventory from './models/inventoryModel.js';
+import Inventory from './models/inventoryModel.js';
 // import Project from './models/projectModel.js';
 // import SaleRequest from './models/saleRequestModel.js';
 
@@ -33,6 +35,7 @@ const allowedOrigins = [
   "https://rofconnect.com",
   "https://rofinventorymanagement.netlify.app",
   "http://localhost:5173",
+  "http://localhost:5174",
 ];
 
 app.use(cors({
@@ -51,6 +54,8 @@ app.use(cookieParser());
 // Routes
 app.use('/api/project', projectRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/welcome', welcomeRoutes);
+app.use('/api/enquiry', enquiryRoutes);
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 // WebSocket (Socket.io)
@@ -81,6 +86,22 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}!`);
 });
+
+
+// const updatePlcCharges = async () => {
+//   try {
+//     const result = await Inventory.updateMany(
+//       { plcCharges: "0.03" },
+//       { $set: { plcCharges: "7.5L" } }
+//     );
+
+//     console.log(`✅ ${result.modifiedCount} documents updated successfully.`);
+//   } catch (err) {
+//     console.error("❌ Error updating plcCharges:", err);
+//   }
+// };
+
+// updatePlcCharges();
 
 // const migrate = async () => {
 //   try {
