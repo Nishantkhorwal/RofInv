@@ -5,10 +5,15 @@ import { FaHandPointer } from "react-icons/fa";
 
 const prizes = [
   "Apple I-Pad",
-  "Smart Phone",
+  "I-Phone",
   "LED TV",
   "Apple Watch",
-  "30:70 Payment Plan",
+  "International Trip",
+  "Play Station",
+  "Gift Vouchers",
+  "Gold Coin",
+  "Double Spin",
+  "Apple Macbook"
 ];
 
 const SpinWheel = () => {
@@ -88,7 +93,7 @@ const SpinWheel = () => {
           <div className="w-full h-full">
             <img
               onClick={handleSpin}
-              src="/wheel5.png"
+              src="/wheel7.png"
               alt="Wheel"
               style={{ transform: `rotate(${rotation}deg)` }}
               className="w-full h-full cursor-pointer rounded-full overflow-hidden transition-transform duration-[4s] ease-out"
