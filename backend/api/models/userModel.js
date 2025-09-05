@@ -53,6 +53,12 @@ const userSchema = new mongoose.Schema(
         type: String, // List of fields like 'towerNumber', 'unitNumber', etc.
       },
     ],
+    hiddenInventories: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Inventory", // Store IDs of inventories to hide from this user
+      },
+    ],
     // passwordChangedAt: {
     //   type: Date,
     // },

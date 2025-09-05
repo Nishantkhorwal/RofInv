@@ -1,5 +1,5 @@
 import express from "express";
-import { registerUser, loginUser, updateSelfInfo, getUser, updateUserByAdmin, getAllUsers, deleteUserByAdmin, getUserActivity, getAllUsersActivity} from "../controllers/userController.js";
+import { registerUser, loginUser, updateSelfInfo, getUser, updateUserByAdmin, getAllUsers, deleteUserByAdmin, getUserActivity, getAllUsersActivity, hideInventoryForUser, unhideInventoryForUser} from "../controllers/userController.js";
 import authenticateUser from '../middleware/authenticateUser.js';
 
 const router = express.Router();
@@ -9,6 +9,8 @@ router.post("/register", registerUser);
 router.post("/login", loginUser);
 router.put("/update", authenticateUser, updateSelfInfo);
 router.get("/get", authenticateUser, getUser);
+router.post("/hideInventoryForUser", authenticateUser, hideInventoryForUser);
+router.post("/unhideInventoryForUser", authenticateUser, unhideInventoryForUser);
 
 router.put("/update/:userId", authenticateUser, updateUserByAdmin);
 router.get("/all", authenticateUser, getAllUsers);

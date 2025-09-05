@@ -52,7 +52,7 @@ export const getAllUsers = async (req, res) => {
     // Ensure only admins can fetch all users
 
     // Fetch all users with selected fields
-    const users = await ROFUser.find().select("name phone email reraNumber gstNumber  role assignedProjects visibleFields managerId");
+    const users = await ROFUser.find().select("name phone email reraNumber gstNumber  role assignedProjects visibleFields managerId hiddenInventories");
 
     return res.status(200).json({ users });
   } catch (error) {
@@ -251,7 +251,7 @@ export const loginUser = async (req, res) => {
       return res.status(401).json({ message: "Invalid password." });
     }
 
-    const allowedPhones = ["9560890395","9643511641","9999240371","9810572879","9873839647","9810099444","7042465389","9873423419","9717130266","9899018016","7701839634"]; // Add more numbers as needed
+    const allowedPhones = ["9560890395","9643511641","9999240371","9810572879","9873839647","9810099444","7042465389","9873423419","9717130266","9899018016","7701839634","7701839633"]; // Add more numbers as needed
 
     // Inside your loginUser function, after finding the user
     if (!allowedPhones.includes(user.phone)) {
@@ -307,13 +307,43 @@ return res.status(200).json({
   }
 };
 
+export const hideInventoryForUser = async (req, res) => {
+  try {
+    const { userId, inventoryId } = req.body;
+
+    await ROFUser.findByIdAndUpdate(userId, {
+      $addToSet: { hiddenInventories: inventoryId }, // prevents duplicates
+    });
+
+    res.status(200).json({ message: "Inventory hidden for user" });
+  } catch (error) {
+    console.error("Error in hideInventoryForUser:", error);
+    res.status(500).json({ message: "Failed to hide inventory", error: error.message });
+  }
+};
+
+export const unhideInventoryForUser = async (req, res) => {
+  try {
+    const { userId, inventoryId } = req.body;
+
+    await ROFUser.findByIdAndUpdate(userId, {
+      $pull: { hiddenInventories: inventoryId },
+    });
+
+    res.status(200).json({ message: "Inventory unhidden for user" });
+  } catch (error) {
+    console.error("Error in unhideInventoryForUser:", error);
+    res.status(500).json({ message: "Failed to unhide inventory", error: error.message });
+  }
+};
+
 
 
 export const getUser = async (req, res) => {
   try {
     const userId = req.user.id; // Assuming user ID is passed in the request via JWT middleware
 
-    const user = await ROFUser.findById(userId).select("name phone email reraNumber gstNumber role assignedProjects visibleFields managerId");
+    const user = await ROFUser.findById(userId).select("name phone email reraNumber gstNumber role assignedProjects visibleFields managerId hiddenInventories");
 
     if (!user) {
       return res.status(404).json({ message: "User not found." });
@@ -336,6 +366,7 @@ export const getUser = async (req, res) => {
         managerId: user.managerId,
         assignedProjects: user.assignedProjects,
         visibleFields: finalVisibleFields, // Ensures required fields are always included
+        hiddenInventories: user.hiddenInventories || [],
       },
     });
   } catch (error) {
@@ -398,7 +429,7 @@ export const updateUserByAdmin = async (req, res) => {
     console.log("Request body:", JSON.stringify(req.body, null, 2));
 
     const { userId } = req.params;
-    const { name, phone, password, role, assignedProjects, visibleFields, email, gstNumber, reraNumber, managerId,  } = req.body;
+    const { name, phone, password, role, assignedProjects, visibleFields, email, gstNumber, reraNumber, managerId,hiddenInventories,  } = req.body;
 
     // Debug what was received
     console.log(`VisibleFields received:`, visibleFields);
@@ -451,7 +482,13 @@ export const updateUserByAdmin = async (req, res) => {
         // Handle explicit null case if needed
         user.visibleFields = [...alwaysVisibleFields];
       }
+
+      
     }
+
+    if (hiddenInventories !== undefined) {
+      user.hiddenInventories = hiddenInventories; 
+      }
 
     await user.save();
 
@@ -459,7 +496,8 @@ export const updateUserByAdmin = async (req, res) => {
       message: "User updated successfully.",
       user: {
         ...user.toObject(),
-        visibleFields: user.visibleFields // Ensure this is included in response
+        visibleFields: user.visibleFields, // Ensure this is included in response
+        hiddenInventories: user.hiddenInventories,
       }
     });
   } catch (error) {

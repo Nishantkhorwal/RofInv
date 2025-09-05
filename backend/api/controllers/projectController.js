@@ -4,6 +4,7 @@ import SaleRequest from '../models/saleRequestModel.js';
 import { ROFUser } from "../models/userModel.js";
 import ExcelJS from 'exceljs';
 import mongoose from 'mongoose';
+import nodemailer from 'nodemailer';
 
 import puppeteer from 'puppeteer';
 import fs from 'fs';
@@ -22,8 +23,18 @@ const fromNumber = process.env.TWILIO_FROM_NUMBER;
 const toNumber = process.env.ADMIN_PHONE_NUMBER;
 const client = twilio(accountSid, authToken);
 
+//before deploying uncomment the message sending in hold request controller
 
 
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  secure: true,
+  port: 465,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
 
 // Set up multer for file uploads
 
@@ -170,6 +181,8 @@ export const getInventoryForProject = async (req, res) => {
     const user = await ROFUser.findById(userId);
     const assignedProjects = user.assignedProjects || [];
     const visibleFields = user.visibleFields || [];
+    const hiddenInventory = user.hiddenInventories || [];
+
 
     // Check if the user has access to the project
     if (!assignedProjects.includes(project._id.toString())) {
@@ -185,7 +198,7 @@ export const getInventoryForProject = async (req, res) => {
     // Fetch inventory based on user role and permissions
     let inventory;
     if (user.role === 'executive') {
-      inventory = await Inventory.find({ projectId: project._id }).select(fieldSelect);
+      inventory = await Inventory.find({ projectId: project._id, _id: { $nin: hiddenInventory } }).select(fieldSelect);
     } else {
       // For other roles, you might want to include full inventory details
       inventory = await Inventory.find({ projectId: project._id });
@@ -213,6 +226,8 @@ export const getAllProjectInventories = async (req, res) => {
     const user = await ROFUser.findById(userId);
     const assignedProjects = user.assignedProjects || [];
     const visibleFields = user.visibleFields || [];
+    const hiddenInventory = user.hiddenInventories || [];
+
 
     // Convert visibleFields array to an object for select()
     const alwaysVisibleFields = ["type", "unitNumber", "floor", "actualArea", "saleableArea", "plcCharges", "status"];
@@ -245,7 +260,7 @@ const fieldSelect = [...new Set([...visibleFields, ...alwaysVisibleFields])].red
           return null; // Skip unauthorized projects
         }
 
-        const inventory = await Inventory.find({ projectId: project._id }).select(fieldSelect);
+        const inventory = await Inventory.find({ projectId: project._id,  _id: { $nin: hiddenInventory } }).select(fieldSelect);
         
         return {
           projectName: project.name,
@@ -322,19 +337,51 @@ export const holdInventoryItem = async (req, res, io) => {
 
       
 
-      io.emit("requestUpdated", {
+      // io.emit("requestUpdated", {
+      //   requestId: saleRequest._id,
+      //   status: 'Pending',
+      //   inventoryId: updatedItem._id,
+        
+      // });
+      io.emit("newHoldRequest", {
         requestId: saleRequest._id,
         status: 'Pending',
         inventoryId: updatedItem._id,
-        inventoryStatus: updatedItem.status,
+        inventoryDetails: {
+          unitNumber: updatedItem.unitNumber,
+          floor : updatedItem.floor,
+          projectName: updatedItem.projectName,
+          inventoryStatus: updatedItem.status,
+          // Add other relevant inventory details
+        },
+        brokerageDetails: {
+          totalBrokerage: 0,
+          isBrokerageComplete: false,
+          bba: false
+        },
+        customerName: customerName,
+        createdAt: new Date(),
+        createdBy: req.user.id,
+        panCardImagePath: panCardImagePath,
+        chequeImagePath: chequeImagePath
+       
       });
       // This should print your Auth Token or `undefined`
 
-      await client.messages.create({
-        from: fromNumber,
-        to: toNumber,
-        body: `🛑 New Sale Request Created\n\n📛 Customer: ${customerName}\n🏢 Unit: ${updatedItem.unitNumber || 'N/A'}\n🕒 Time: ${new Date().toLocaleString()}`
-      });
+      // const messageBody = `🛑 New Sale Request Created\n\n📛 Customer: ${customerName}\n🏢 Unit: ${updatedItem.unitNumber || 'N/A'}\n🕒 Time: ${new Date().toLocaleString()}`;
+
+      // await client.messages.create({
+      //   from: fromNumber,
+      //   to: toNumber,
+      //   body: `🛑 New Sale Request Created\n\n📛 Customer: ${customerName}\n🏢 Unit: ${updatedItem.unitNumber || 'N/A'}\n🕒 Time: ${new Date().toLocaleString()}`
+      // });
+
+      // await transporter.sendMail({
+      //   from: process.env.EMAIL_USER,
+      //   to: process.env.ADMIN_EMAIL,
+      //   subject: '🛑 New Sale Request Created',
+      //   text: messageBody,
+      // }); 
 
       return res.json({ 
         success: true, 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { io } from "socket.io-client"; // Import the socket.io client
 import { RiArrowRightSLine } from "react-icons/ri";
@@ -18,9 +18,10 @@ import { MdModeEditOutline } from "react-icons/md";
 import { GoArrowRight } from "react-icons/go";
 import { CiEdit } from "react-icons/ci";
 import { RxCross2 } from "react-icons/rx";
-
+import { FaCircleCheck } from "react-icons/fa6";
+import { BsFillXCircleFill } from "react-icons/bs";
 import { Line } from 'react-chartjs-2';
-import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement,Filler, Title, Tooltip, Legend } from 'chart.js';
 import { ChevronDown, Building2, CheckCircle2, CircleX, Clock, ArrowRight, Home, User, LogOut, X } from "lucide-react";
 import BrokerDetails from './BrokerDetails';
 import SaleForm from './SaleForm';
@@ -29,8 +30,10 @@ import RequestEditForm from './RequestEditForm';
 import { PaymentForm } from './PaymentForm';
 import UserActivity from './UserActivity';
 import ReactSelect from 'react-select';
+import CustomSelect from './CustomSelect';
+import ProjectSelectDropdown from './ProjectSelectDropdown';
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+ChartJS.register(CategoryScale, LinearScale, PointElement,Filler, LineElement, Title, Tooltip, Legend);
 
 
 // Initialize the WebSocket connection
@@ -54,6 +57,10 @@ const Sidebar = () => {
   const [selectedRoleFilter, setSelectedRoleFilter] = useState("all");
   const [role, setRole] = useState(''); // State to track selected role
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const tabsRef = useRef([]);
+  const [indicatorStyle, setIndicatorStyle] = useState({});
+
+  
 
   const handleRoleChange = (e) => {
     setRole(e.target.value); // Update the role state on change
@@ -73,40 +80,98 @@ const Sidebar = () => {
   };
 
   useEffect(() => {
-    socket.on('requestUpdated', (updatedRequest) => {
-      console.log('Received updated request:', updatedRequest);  // Log received data
-      setSaleRequests((prevRequests) => {
-        const updatedRequests = { ...prevRequests };
-        const newStatus = updatedRequest.status.toLowerCase();
-        let updated = false;
-
-        console.log('Updated status:', newStatus);
-
-        // Iterate through categories to check for the requestId
-        Object.keys(updatedRequests).forEach((category) => {
-          updatedRequests[category] = updatedRequests[category].map((req) => {
-            console.log('Checking request:', req._id);  // Log each request's ID for comparison
-
+    if (!socket) return;
+  
+    // Listener for new hold requests
+    const handleNewHoldRequest = (newRequest) => {
+      console.log('New hold request received:', newRequest);
+      
+      // Update saleRequests state immediately
+      setSaleRequests(prev => {
+    // Ensure inventoryId is properly structured
+    const updatedRequest = {
+      ...newRequest,
+      inventoryId: newRequest.inventoryDetails 
+        ? { 
+            ...newRequest.inventoryDetails,
+            _id: newRequest.inventoryId,
+            customerName: newRequest.customerName
+          }
+        : newRequest.inventoryId
+    };
+    
+    return {
+      ...prev,
+      pending: [updatedRequest, ...prev.pending]
+    };
+  });
+  
+     
+      
+      // Update inventory status in real-time
+      setProjectInventories(prevInventories => 
+        prevInventories.map(project => ({
+          ...project,
+          inventory: project.inventory.map(item => 
+            item._id === newRequest.inventoryId 
+              ? { ...item, status: 'Hold' } 
+              : item
+          )
+        }))
+      );
+    };
+  
+    // Listener for general request updates
+    const handleRequestUpdated = (updatedRequest) => {
+      setSaleRequests(prev => {
+        const updatedRequests = { ...prev };
+        let found = false;
+  
+        Object.keys(updatedRequests).forEach(category => {
+          updatedRequests[category] = updatedRequests[category].map(req => {
             if (req._id === updatedRequest.requestId) {
-              updated = true;
-              return { ...req, ...updatedRequest };  // Update the request if found
+              found = true;
+              return { ...req, ...updatedRequest };
             }
             return req;
           });
         });
-
-        console.log('Updated state:', updatedRequests);
-
-        if (!updated) {
-          console.warn('Request not found in the existing saleRequests:', updatedRequest);
+  
+        if (!found && updatedRequest.status === 'Pending') {
+          updatedRequests.pending = [updatedRequest, ...updatedRequests.pending];
         }
-
+  
         return updatedRequests;
       });
-    });
-
+    };
+  
+    socket.on('newHoldRequest', handleNewHoldRequest);
+    socket.on('requestUpdated', handleRequestUpdated);
+  
     return () => {
-      socket.off('requestUpdated');
+      socket.off('newHoldRequest', handleNewHoldRequest);
+      socket.off('requestUpdated', handleRequestUpdated);
+    };
+  }, [socket]);
+  // Add this to your socket listeners
+  useEffect(() => {
+    if (!socket) return;
+  
+    const handleInventoryStatusUpdate = ({ inventoryId, status }) => {
+      setProjectInventories(prev => 
+        prev.map(project => ({
+          ...project,
+          inventory: project.inventory.map(item => 
+            item._id === inventoryId ? { ...item, status } : item
+          )
+        }))
+      );
+    };
+  
+    socket.on('inventoryStatusUpdated', handleInventoryStatusUpdate);
+  
+    return () => {
+      socket.off('inventoryStatusUpdated', handleInventoryStatusUpdate);
     };
   }, [socket]);
   // Make sure socket is part of the dependency array
@@ -117,7 +182,7 @@ const Sidebar = () => {
 
   // Fetch all project inventories
   useEffect(() => {
-    if (activeTab === 'projects' || activeTab === 'dashboard' || activeTab === 'createExecutive') {
+    if (activeTab === 'projects' || activeTab === 'dashboard' || activeTab === 'createExecutive' || activeTab === 'users') {
       const fetchInventories = async () => {
         setLoading(true);
         setError(null);
@@ -340,13 +405,31 @@ const Sidebar = () => {
     setRequestPage(1); // Reset to first page when filters change
   }, [selectedCategory, selectedBrokerFilter, chequeStatusFilter, requestSearchTerm, showPendingBrokerageOnly]);
 
+  const categories = ['Pending', 'Approved', 'Rejected']; // Possible categories
+  useEffect(() => {
+  const index = categories.indexOf(selectedCategory);
+  const currentTab = tabsRef.current[index];
+
+  if (currentTab) {
+    const { offsetLeft, clientWidth } = currentTab;
+
+    setIndicatorStyle(prev => {
+      if (prev.left === offsetLeft && prev.width === clientWidth) {
+        return prev; // No change, avoid re-render
+      }
+      return { left: offsetLeft, width: clientWidth };
+    });
+  }
+}, [selectedCategory, categories]);
+
+
 
 
 
 
 
   const renderRequestsTable = () => {
-    const categories = ['Pending', 'Approved', 'Rejected']; // Possible categories
+    
     if (loading) return <p>Loading requests...</p>;
     if (error) return <p className="text-red-500">Error: {error}</p>;
 
@@ -354,6 +437,7 @@ const Sidebar = () => {
       setSelectedCategory(category);
       setRequestPage(1); // Reset to page 1 when changing category
     };
+    
     const handleApproveClick = (request) => {
       const updatedUnitDetails = { ...request.unitDetails };
 
@@ -882,7 +966,7 @@ const Sidebar = () => {
                     payment => !payment.isChequeCleared
                   ).length || 0;
                   return (
-                    <tr key={request._id}>
+                    <tr className='text-sm' key={request._id}>
                       <td className="px-4 py-4">{typeof request.createdBy === 'object'
                         ? request.createdBy.name
                         : users.find(u => u._id === request.createdBy)?.name || 'Loading...'}</td>
@@ -954,12 +1038,17 @@ const Sidebar = () => {
                       )}
 
                       {request.status === 'Approved' && (
-                        <td className="px-4 py-4">{request.brokerageDetails.bba ? "Paid" : "Not Paid"}</td>
+                        <td className={`px-4 text-xl text-center py-4 ${request.brokerageDetails?.bba ? "text-green-500" : "text-red-600"}`}>{request.brokerageDetails?.bba ? <div className="flex justify-center">
+                          <FaCircleCheck />
+                        </div> : <div className="flex justify-center">
+                         <BsFillXCircleFill/>
+                        </div>}</td>
                       )}
+                      
 
                       {request.status === 'Approved' && (
                         <td className="px-4 py-4">
-                          <span className={`inline-block px-2 py-1 rounded-full text-xs font-semibold ${pendingCheques > 0 ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'
+                          <span className={`inline-block px-2 py-1 rounded-md text-xs font-semibold ${pendingCheques > 0 ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'
                             }`}>
                             {pendingCheques} pending
                           </span>
@@ -1008,7 +1097,7 @@ const Sidebar = () => {
                       {request.status === 'Pending' && (
                         <td className="px-3 py-4 flex flex-col">
                           <a
-                            href={`${API_BASE_URL}/${request.inventoryId.chequeImagePath}`}
+                            href={`${API_BASE_URL}/${request.inventoryId?.chequeImagePath}`}
                             download
                             target="_blank"
                             rel="noopener noreferrer"
@@ -1017,7 +1106,7 @@ const Sidebar = () => {
                             Cheque
                           </a>
                           <a
-                            href={`${API_BASE_URL}/${request.inventoryId.panCardImagePath}`}
+                            href={`${API_BASE_URL}/${request.inventoryId?.panCardImagePath}`}
                             download
                             target="_blank"
                             rel="noopener noreferrer"
@@ -1403,19 +1492,31 @@ const Sidebar = () => {
 
     return (
       <div className="space-y-4">
-        <div className="flex flex-row rounded-lg w-full lg:py-10 py-16">
-          {categories.map((category) => (
-            <div className={`${selectedCategory === category ? 'rounded-xl bg-white' : ''} border w-1/3 border-t border-b`} key={category}>
-              <p
-                onClick={() => handleCategoryChange(category)}
-                className={`${selectedCategory === category ? 'border-red-500 border rounded-lg shadow-xl' : 'rounded-lg shadow-none'
-                  } font-semibold cursor-pointer text-center py-2`}
-              >
-                {category}
-              </p>
-            </div>
-          ))}
-        </div>
+        <div className="relative w-full overflow-hidden rounded-lg border border-gray-200 bg-gray-300 p-1 shadow-sm">
+      {/* Sliding Indicator */}
+      <div
+        className="absolute top-1 z-10 rounded-md bg-white shadow-md transition-all duration-300 ease-out"
+        style={{
+          ...indicatorStyle,
+          height: "calc(100% - 8px)",
+        }}
+      />
+
+      {/* Category Buttons */}
+      <div className="relative z-20 flex w-full">
+        {categories.map((category, index) => (
+          <button
+            key={category}
+            ref={(el) => (tabsRef.current[index] = el)}
+            onClick={() => handleCategoryChange(category)}
+            className={`flex-1 rounded-md px-4 py-2.5 text-center text-sm font-medium transition-colors duration-200
+              ${selectedCategory === category ? "text-gray-900" : "text-gray-600 hover:text-gray-900"}`}
+          >
+            {category}
+          </button>
+        ))}
+      </div>
+    </div>
 
         {/* Search Bar */}
         <div className="flex justify-end mb-4 gap-4">
@@ -1522,6 +1623,7 @@ const Sidebar = () => {
           <div className="flex-1 overflow-y-hidden">{renderTable(selectedCategory)}</div>
         </div>
       </div>
+
     );
   };
 
@@ -1664,7 +1766,7 @@ const Sidebar = () => {
     }
   };
   const [inventoryPages, setInventoryPages] = useState({});
-  const inventoriesPerPage = 10;
+  const inventoriesPerPage = 6;
 
 
 
@@ -1768,7 +1870,7 @@ const Sidebar = () => {
     if (error) return <p className="text-red-500">Error: {error}</p>;
 
     return (
-      <div className="py-10">
+      <div className="">
         {selectedInventoryForSale && (
 
           <SaleForm
@@ -1778,63 +1880,23 @@ const Sidebar = () => {
           />
 
         )}
-        {/* Header */}
-        <h2 className="text-2xl text-center font-bold lg:text-4xl mb-6">
-          Project Inventories
-        </h2>
 
         {/* Filters */}
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex">
-            {/* Project Dropdown */}
-            <select
-              value={selectedProject}
-              onChange={(e) => {
-                setSelectedProject(e.target.value);
-                setCurrentPage(1); // Reset pagination when changing project
-              }}
-              className="border rounded-lg shadow-sm mr-4 px-4 py-2"
-            >
-              <option value="All">All Projects</option>
-              {projectInventories.map((project) => (
-                <option key={project.projectId} value={project.projectName}>
-                  {project.projectName}
-                </option>
-              ))}
-            </select>
-
-            {/* Status Dropdown */}
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="border rounded-lg shadow-sm mr-4 px-4 py-2"
-            >
-              <option value="All">Status(All)</option>
-              <option value="Unsold">Unsold</option>
-              <option value="Hold">Hold</option>
-              <option value="Sold">Sold</option>
-            </select>
-
-            {/* PLC Filter Dropdown */}
-            {/* <select
-              value={filterPLC}
-              onChange={(e) => setFilterPLC(e.target.value)}
-              className="border rounded-lg shadow-sm mr-4 px-4 py-2"
-            >
-              <option value="All">PLC (All)</option>
-              <option value="Yes">Yes</option>
-              <option value="No">No</option>
-            </select> */}
+        <div className="flex justify-between items-center mb-3">
+          <div className="flex justify-between w-full">
+            <div>
+              <h1 className='americana font-bold text-3xl'>Project Inventories</h1>
+            </div>
+            <div className='flex'>
+            <ProjectSelectDropdown
+              selectedProject={selectedProject}
+              setSelectedProject={setSelectedProject}
+              projectInventories={projectInventories}
+              setCurrentPage={setCurrentPage}
+            />
+            <CustomSelect filterStatus={filterStatus} setFilterStatus={setFilterStatus} />
+            </div>
           </div>
-
-          {/* Search Bar */}
-          {/* <input
-            type="text"
-            placeholder="Search projects..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="border rounded-lg shadow-sm px-4 py-2"
-          /> */}
         </div>
 
         {/* Message for No Project Matches */}
@@ -1851,7 +1913,7 @@ const Sidebar = () => {
             className="bg-white border border-gray-300 rounded-lg shadow-lg hover:cursor-pointer hover:shadow-2xl mb-8 overflow-y-hidden pb-6"
           >
             <div className="flex flex-row justify-between lg:border-b px-20 py-4">
-              <h3 className="text-center text-lg font-bold lg:text-3xl">
+              <h3 className="text-center americana text-lg font-bold lg:text-3xl">
                 {project.projectName}
               </h3>
               <input
@@ -1878,26 +1940,28 @@ const Sidebar = () => {
 
             {/* Inventory Table or No Inventory Message */}
             {project.inventory.length > 0 ? (
-              <div className="overflow-auto max-h-[100vh]">
-                <table className="table-auto text-center w-full mt-2">
-                  <thead className='sticky top-0 bg-white z-10'>
-                    <tr>
-                      <th className="px-4 py-2">AREA (Sq.Yard)</th>
-                      <th className="px-4 py-2">W</th>
-                      <th className="px-4 py-2">L</th>
-                      <th className="px-4 py-2">Type</th>
-                      <th className="px-4 py-2">Unit No.</th>
-                      <th className="px-4 py-2">Floor</th>
-                      <th className="px-4 py-2">Status</th>
-                      <th className="px-4 py-2">Carpet Area</th>
-                      <th className="px-4 py-2">Terrace Area</th>
-                      <th className="px-4 py-2">Stilt Area</th>
-                      <th className="px-4 py-2">Basement Area</th>
-                      <th className="px-4 py-2">Mumty</th>
-                      <th className="px-4 py-2">Common Area</th>
-                      <th className="px-4 py-2">Actual Area</th>
-                      <th className="px-1 py-2">PLC</th>
-                      <th className="px-4 py-2">Charges</th>
+              <div className="overflow-y-hidden hide-scrollbar max-h-[95vh]  border border-gray-300 shadow-sm">
+                
+              <table className="min-w-full text-sm text-center border-collapse">
+                <thead className="sticky top-0 z-10 bg-white shadow-sm">
+                  <tr className="bg-gray-100 text-gray-800 font-semibold text-xs uppercase tracking-wide">
+                      <th className="px-4 py-2 border lora">AREA (Sq.Yard)</th>
+                      <th className="px-4 py-2 border lora">W</th>
+                      <th className="px-4 py-2 border lora">L</th>
+                      <th className="px-4 py-2 border lora">Type</th>
+                      <th className="px-4 py-2 border lora">Unit No.</th>
+                      <th className="px-4 py-2 border lora">Floor</th>
+                      <th className="px-4 py-2 border lora">Status</th>
+                      <th className="px-4 py-2 border lora">Carpet Area</th>
+                      <th className="px-4 py-2 border lora">Terrace Area</th>
+                      <th className="px-4 py-2 border lora">Stilt Area</th>
+                      <th className="px-4 py-2 border lora">Basement Area</th>
+                      <th className="px-4 py-2 border lora">Mumty</th>
+                      <th className="px-4 py-2 border lora">Common Area</th>
+                      <th className="px-4 py-2 border lora">Actual Area</th>
+                      <th className="px-4 py-2 border lora">PLC</th>
+                      <th className="px-4 py-2 border lora">Charges</th>
+                      <th className="px-4 py-2 border lora">Edit</th>
 
                     </tr>
                   </thead>
@@ -1906,7 +1970,7 @@ const Sidebar = () => {
                       const isEditing = editingInventoryId === item._id;
                       return (
                         <tr key={item._id}>
-                          <td className="px-4 py-2">
+                          <td className="px-4 py-2 poppins">
                             {isEditing ? (
                               <input
                               type="number"
@@ -1923,7 +1987,7 @@ const Sidebar = () => {
                               Number(item.areaSqYard).toFixed(2)
                             )}
                           </td>
-                          <td className="px-4 py-2">
+                          <td className="px-4 py-2 poppins">
                             {isEditing ? (
                               <input
                                 type="text"
@@ -1940,7 +2004,7 @@ const Sidebar = () => {
                               item.W
                             )}
                           </td>
-                          <td className="px-4 py-2">
+                          <td className="px-4 py-2 poppins">
                             {isEditing ? (
                               <input
                                 type="text"
@@ -1958,7 +2022,7 @@ const Sidebar = () => {
                             )}
                           </td>
 
-                          <td className="px-4 py-2">
+                          <td className="px-4 py-2 poppins">
                             {isEditing ? (
                               <input
                                 type="text"
@@ -1976,7 +2040,7 @@ const Sidebar = () => {
                             )}
                           </td>
 
-                          <td className="px-4 py-2">
+                          <td className="px-4 py-2 poppins">
                             {isEditing ? (
                               <input
                                 type="text"
@@ -1994,7 +2058,7 @@ const Sidebar = () => {
                             )}
                           </td>
 
-                          <td className="px-4 py-2">
+                          <td className="px-4 py-2 poppins">
                             {isEditing ? (
                               <input
                                 type="text"
@@ -2011,7 +2075,7 @@ const Sidebar = () => {
                               item.floor
                             )}
                           </td>
-                          <td className="px-4 py-2">
+                          <td className="px-4 py-2 poppins">
                             <select
                               value={item.status}
                               onChange={(e) => handleStatusChange(item._id, e.target.value)}
@@ -2028,7 +2092,7 @@ const Sidebar = () => {
                               <option value="Hold">Hold</option>
                             </select>
                           </td>
-                          <td className="px-4 py-2">
+                          <td className="px-4 py-2 poppins">
                             {isEditing ? (
                               <input
                                 type="number"
@@ -2046,7 +2110,7 @@ const Sidebar = () => {
                             )}
                           </td>
 
-                          <td className="px-4 py-2">
+                          <td className="px-4 py-2 poppins">
                             {isEditing ? (
                               <input
                                 type="number"
@@ -2064,7 +2128,7 @@ const Sidebar = () => {
                             )}
                           </td>
 
-                          <td className="px-4 py-2">
+                          <td className="px-4 py-2 poppins">
                             {isEditing ? (
                               <input
                                 type="number"
@@ -2082,7 +2146,7 @@ const Sidebar = () => {
                             )}
                           </td>
 
-                          <td className="px-4 py-2">
+                          <td className="px-4 py-2 poppins">
                             {isEditing ? (
                               <input
                                 type="number"
@@ -2100,7 +2164,7 @@ const Sidebar = () => {
                             )}
                           </td>
 
-                          <td className="px-4 py-2">
+                          <td className="px-4 py-2 poppins">
                             {isEditing ? (
                               <input
                                 type="number"
@@ -2117,7 +2181,7 @@ const Sidebar = () => {
                               Number(item.mumty).toFixed(2)
                             )}
                           </td>
-                          <td className="px-4 py-2">
+                          <td className="px-4 py-2 poppins">
                             {isEditing ? (
                               <input
                                 type="number"
@@ -2135,7 +2199,7 @@ const Sidebar = () => {
                             )}
                           </td>
 
-                          <td className="px-4 py-2">
+                          <td className="px-4 py-2 poppins">
                             {isEditing ? (
                               <input
                                 type="number"
@@ -2153,7 +2217,7 @@ const Sidebar = () => {
                             )}
                           </td>
 
-                          <td className="px-4 py-2">
+                          <td className="px-4 py-2 poppins">
                             {isEditing ? (
                               <input
                                 type="text"
@@ -2171,7 +2235,7 @@ const Sidebar = () => {
                             )}
                           </td>
 
-                          <td className="px-4 py-2">
+                          <td className="px-4 py-2 poppins">
                             {isEditing ? (
                               <input
                                 type="text"
@@ -2191,7 +2255,7 @@ const Sidebar = () => {
                             )}
                           </td>
 
-                          <td className="px-4 py-2">
+                          <td className="px-4 py-2 poppins">
                             <button
                               onClick={() => {
                                 if (isEditing) {
@@ -2219,23 +2283,30 @@ const Sidebar = () => {
                 </table>
                 {/* Inventory Pagination */}
                 {project.totalInventory > inventoriesPerPage && (
-                  <div className="flex justify-center items-center mt-2">
+                  <div className="flex justify-center items-center my-3">
                     <button
-                      onClick={() => handleInventoryPageChange(project.projectId, "prev", project.totalInventory)}
+                      onClick={() =>
+                        handleInventoryPageChange(project.projectId, "prev", project.totalInventory)
+                      }
                       disabled={(inventoryPages[project.projectId] || 1) === 1}
-                      className="mx-2 text-black text-xl disabled:text-gray-400"
+                      className="mx-2 p-1 rounded-full hover:bg-gray-200 disabled:text-gray-400"
                     >
-                      <RiArrowLeftSLine />
+                      <RiArrowLeftSLine size={24} />
                     </button>
-
-                    <p className="text-sm">{`Page ${inventoryPages[project.projectId] || 1} of ${Math.ceil(project.totalInventory / inventoriesPerPage)}`}</p>
-
+                    <span className="text-sm mx-1 text-gray-700">
+                      Page {inventoryPages[project.projectId] || 1} of{" "}
+                      {Math.ceil(project.totalInventory / inventoriesPerPage)}
+                    </span>
                     <button
-                      onClick={() => handleInventoryPageChange(project.projectId, "next", project.totalInventory)}
-                      disabled={(inventoryPages[project.projectId] || 1) >= Math.ceil(project.totalInventory / inventoriesPerPage)}
-                      className="mx-2 text-black text-xl disabled:text-gray-400"
+                      onClick={() =>
+                        handleInventoryPageChange(project.projectId, "next", project.totalInventory)
+                      }
+                      disabled={
+                        ((inventoryPages[project.projectId] || 1) * inventoriesPerPage) >= project.totalInventory
+                      }
+                      className="mx-2 p-1 rounded-full hover:bg-gray-200 disabled:text-gray-400"
                     >
-                      <RiArrowRightSLine />
+                      <RiArrowRightSLine size={24} />
                     </button>
                   </div>
                 )}
@@ -2301,34 +2372,75 @@ const Sidebar = () => {
     }, 0);
 
     const dataByMonthSold = {};
-    const dataByMonthHold = {};
+const dataByMonthHold = {};
 
-    selectedProjectData.forEach((project) => {
-      project.inventory.forEach((item) => {
-        // Sold Properties logic
-        if (item.status === 'Sold') {
-          const soldDate = item.createdAt ? new Date(item.createdAt) : null;
-          if (soldDate && !isNaN(soldDate.getTime())) {
-            const soldMonth = soldDate.toLocaleString('default', { month: 'long', year: 'numeric' });
-            if (!dataByMonthSold[soldMonth]) {
-              dataByMonthSold[soldMonth] = 0;
-            }
-            dataByMonthSold[soldMonth]++;
-          }
-        }
-        // Hold Properties logic
-        if (item.status === 'Hold') {
-          const holdDate = item.createdAt ? new Date(item.createdAt) : null;
-          if (holdDate && !isNaN(holdDate.getTime())) {
-            const holdMonth = holdDate.toLocaleString('default', { month: 'long', year: 'numeric' });
-            if (!dataByMonthHold[holdMonth]) {
-              dataByMonthHold[holdMonth] = 0;
-            }
-            dataByMonthHold[holdMonth]++;
-          }
-        }
-      });
-    });
+console.log("sale requests", saleRequests);
+
+// Flatten all requests from all statuses
+const allRequests = [
+  ...(saleRequests?.pending || []),
+  ...(saleRequests?.approved || []),
+  ...(saleRequests?.rejected || [])
+];
+
+allRequests.forEach((request) => {
+  const inventory = request.inventory;
+  const inventoryProject = inventory?.projectName;
+
+  // Only include requests for the selected project
+  const isProjectMatch = !chosenProject || inventoryProject === chosenProject;
+
+  if (isProjectMatch && request.status === "Approved") {
+    const soldDate = new Date(request.createdAt);
+    if (!isNaN(soldDate.getTime())) {
+      const soldMonth = soldDate.toLocaleString("default", { month: "long", year: "numeric" });
+      if (!dataByMonthSold[soldMonth]) {
+        dataByMonthSold[soldMonth] = 0;
+      }
+      dataByMonthSold[soldMonth]++;
+    }
+  }
+
+  if (isProjectMatch && request.status === "Hold") {
+    const holdDate = new Date(request.createdAt);
+    if (!isNaN(holdDate.getTime())) {
+      const holdMonth = holdDate.toLocaleString("default", { month: "long", year: "numeric" });
+      if (!dataByMonthHold[holdMonth]) {
+        dataByMonthHold[holdMonth] = 0;
+      }
+      dataByMonthHold[holdMonth]++;
+    }
+  }
+});
+
+
+
+    // selectedProjectData.forEach((project) => {
+    //   project.inventory.forEach((item) => {
+    //     // Sold Properties logic
+    //     if (item.status === 'Sold') {
+    //       const soldDate = item.createdAt ? new Date(item.createdAt) : null;
+    //       if (soldDate && !isNaN(soldDate.getTime())) {
+    //         const soldMonth = soldDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+    //         if (!dataByMonthSold[soldMonth]) {
+    //           dataByMonthSold[soldMonth] = 0;
+    //         }
+    //         dataByMonthSold[soldMonth]++;
+    //       }
+    //     }
+    //     // Hold Properties logic
+    //     if (item.status === 'Hold') {
+    //       const holdDate = item.createdAt ? new Date(item.createdAt) : null;
+    //       if (holdDate && !isNaN(holdDate.getTime())) {
+    //         const holdMonth = holdDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+    //         if (!dataByMonthHold[holdMonth]) {
+    //           dataByMonthHold[holdMonth] = 0;
+    //         }
+    //         dataByMonthHold[holdMonth]++;
+    //       }
+    //     }
+    //   });
+    // });
 
     const monthsSold = Object.keys(dataByMonthSold).sort((a, b) => new Date(a) - new Date(b));
     const soldCounts = monthsSold.map((month) => dataByMonthSold[month]);
@@ -2568,11 +2680,54 @@ const Sidebar = () => {
             <div className="mt-2 text-sm text-amber-800">
               You have {saleRequests.pending.length} pending requests:
               <ul className="mt-2 space-y-1 text-xs">
-                {recentRequests.map((req, i) => (
-                  <li key={i}>
-                    <strong>{req.inventoryId.customerName || "Unknown"}</strong> • Unit: {req.inventoryId.unitNumber || "N/A"}
-                  </li>
-                ))}
+                {recentRequests.length > 0 ? (
+                  recentRequests.map((request, index) => {
+                    // Safely get the inventory data whether it's populated or not
+                    const inventoryData = request.inventoryId?._id 
+                      ? request.inventoryId  // If populated
+                      : projectInventories
+                          .flatMap(p => p.inventory)
+                          .find(i => i._id === request.inventoryId) || {}; // If not populated, find in inventory
+                    
+                    // Get customer name with fallback
+                    const customerName = request.customerName || 
+                                        inventoryData.customerName || 
+                                        "Customer Name Not Available";
+                    
+                    // Get unit number with fallback
+                    const unitNumber = inventoryData.unitNumber || "N/A";
+                    
+                    // Get creator name with fallback
+                    const createdByName = request.createdBy?.name || 
+                                        "Executive";
+
+                    return (
+                      <div key={request._id} className="border rounded p-2 mb-2">
+                        <div className="flex justify-between items-center">
+                          <span className="bg-amber-50 text-amber-700 px-2 py-1 text-xs rounded">
+                            Pending
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            Request #{index + 1}
+                          </span>
+                        </div>
+                        <div className="mt-2 text-sm font-medium">
+                          {customerName}
+                        </div>
+                        <div className="flex justify-between text-xs text-gray-500 mt-1">
+                          <div className="flex items-center gap-1">
+                            <Home className="h-3 w-3" /> Unit {unitNumber}
+                          </div>
+                          <div>By: {createdByName}</div>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="text-sm text-gray-500 h-[180px] flex items-center justify-center">
+                    No pending requests
+                  </div>
+                )}
               </ul>
             </div>
           </div>
@@ -2927,7 +3082,8 @@ const Sidebar = () => {
       const updatedUser = {
         ...editableData[userId],
         visibleFields: Array.from(editableData[userId]?.visibleFields || new Set(originalUser?.visibleFields || [])),
-        assignedProjects: editableData[userId]?.assignedProjects || originalUser?.assignedProjects || []
+        assignedProjects: editableData[userId]?.assignedProjects || originalUser?.assignedProjects || [],
+        hiddenInventories: editableData[userId]?.hiddenInventories ?? originalUser?.hiddenInventories ?? [],
       };
       if (editableData[userId]?.password) {
         updatedUser.password = editableData[userId].password;
@@ -2983,7 +3139,8 @@ const Sidebar = () => {
               managerId: updatedData.managerId ?? originalUser.managerId,
               reraNumber: updatedData.reraNumber ?? originalUser.reraNumber,
               visibleFields: updatedData.visibleFields ?? originalUser.visibleFields,
-              assignedProjects: updatedData.assignedProjects ?? originalUser.assignedProjects
+              assignedProjects: updatedData.assignedProjects ?? originalUser.assignedProjects,
+              hiddenInventories: updatedData.hiddenInventories ?? originalUser.hiddenInventories,
             }
             : u
         )
@@ -2999,6 +3156,24 @@ const Sidebar = () => {
       setUserLoading(false);
     }
   };
+  const toggleHiddenInventory = (userId, inventoryId) => {
+  setEditableData((prev) => {
+    const current = new Set(prev[userId]?.hiddenInventories || []);
+    if (current.has(inventoryId)) {
+      current.delete(inventoryId); // remove if already selected
+    } else {
+      current.add(inventoryId); // add if new
+    }
+    return {
+      ...prev,
+      [userId]: {
+        ...prev[userId],
+        hiddenInventories: Array.from(current),
+      },
+    };
+  });
+};
+
 
 
   const [deleteConfirmation, setDeleteConfirmation] = useState(null);
@@ -3412,6 +3587,7 @@ const Sidebar = () => {
                               reraNumber: user.reraNumber ?? "",
                               visibleFields: new Set(user.visibleFields || []),
                               assignedProjects: [...(user.assignedProjects || [])],
+                              hiddenInventories: [...(user.hiddenInventories || [])],
                               managerId: user.managerId ?? "",
                             }
                           }));
@@ -3525,6 +3701,71 @@ const Sidebar = () => {
                         className={`border-b w-full bg-transparent ${user._id === editingUser ? "border-black" : "border-gray-300"}`}
                       />
                     </div>
+                    {/* Hidden Inventories Dropdown */}
+                    <div className="mb-4">
+                      <label className="text-gray-700 font-semibold">Hidden Inventories</label>
+                      {user._id === editingUser ? (
+                        <div className="border p-2 rounded-md bg-white max-h-40 overflow-y-auto space-y-1">
+                          {projectInventories
+                            .filter((p) =>
+                              editableData[user._id]?.assignedProjects.includes(p.projectId) ||
+                              user.assignedProjects.includes(p.projectId)
+                            )
+                            .flatMap((p) =>
+                              p.inventory.map((inv) => {
+                                
+                                const isChecked = editableData[user._id]?.hiddenInventories
+                                ? editableData[user._id].hiddenInventories.includes(inv._id)
+                                : user.hiddenInventories?.includes(inv._id) || false;
+
+                                
+    
+
+                                return (
+                                  <label key={inv._id} className="flex items-center space-x-2">
+                                    <input
+                                      type="checkbox"
+                                      checked={isChecked}
+                                      onChange={(e) => {
+                                        setEditableData((prev) => {
+                                          const prevHidden =
+                                            prev[user._id]?.hiddenInventories || [];
+                                          const updated = e.target.checked
+                                            ? [...prevHidden, inv._id]
+                                            : prevHidden.filter((id) => id !== inv._id);
+                                          return {
+                                            ...prev,
+                                            [user._id]: {
+                                              ...prev[user._id],
+                                              hiddenInventories: updated,
+                                            },
+                                          };
+                                        });
+                                      }}
+                                      className="accent-gray-700"
+                                    />
+                                    <span>
+                                      {p.projectName} - Unit {inv.unitNumber} ({inv.floor})
+                                    </span>
+                                  </label>
+                                );
+                              })
+                            )}
+                        </div>
+                      ) : (
+                        <div className="text-gray-800 text-sm">
+                          {user.hiddenInventories && user.hiddenInventories.length > 0 ? (
+                            <span className="font-medium">
+                              Hidden {user.hiddenInventories.length} Inventor{user.hiddenInventories.length > 1 ? "ies" : "y"}
+                            </span>
+                          ) : (
+                            <span className="text-gray-500">None</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+
 
                     {/* RERA Number */}
                     <div className="mb-2">
