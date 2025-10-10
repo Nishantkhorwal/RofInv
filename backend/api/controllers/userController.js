@@ -251,7 +251,7 @@ export const loginUser = async (req, res) => {
       return res.status(401).json({ message: "Invalid password." });
     }
 
-    const allowedPhones = ["9560890395","9643511641","9999240371","9810572879","9873839647","9810099444","7042465389","9873423419","9717130266","9899018016","7701839634","7701839633"]; // Add more numbers as needed
+    const allowedPhones = ["9560890395","9643511641","9999240371","9810572879","9873839647","9810099444","7042465389","9873423419","9717130266","9899018016","7701839634","7701839633","9560222400"]; // Add more numbers as needed
 
     // Inside your loginUser function, after finding the user
     if (!allowedPhones.includes(user.phone)) {
