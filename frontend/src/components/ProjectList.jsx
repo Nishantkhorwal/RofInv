@@ -109,42 +109,7 @@ const ProjectList = () => {
     }
   }, [activeTab]);
 
-  useEffect(() => {
-    const handleConnect = () => {
-      console.log("Connected to server via WebSocket!");
-    };
-
-
-    const handleRequestUpdated = (update) => {
-      console.log("Real-time update received:", update);
-      setProjectInventories((prevInventories) =>
-        prevInventories.map((project) => ({
-          ...project,
-          inventory: project.inventory.map((item) => {
-            if (item._id === update.inventoryId) {
-              // Update the inventory item status
-              return { ...item, status: update.inventoryStatus };
-            }
-            return item;
-          }),
-        }))
-      );
-    };
-
-    socket.on("connect", handleConnect);
-    socket.on("requestUpdated", handleRequestUpdated);
-
-    socket.on("connect_error", (err) => {
-      console.error("WebSocket connection error:", err);
-    });
-
-    // Cleanup function
-    return () => {
-      socket.off("connect", handleConnect);
-      socket.off("requestUpdated", handleRequestUpdated);
-      socket.disconnect();
-    };
-  }, []);
+  
 
 
   // Logout function
@@ -442,7 +407,7 @@ const ProjectList = () => {
                 <table className="table-auto text-center  w-full mt-2">
                   <thead className='sticky top-0 bg-white z-10'>
                     <tr>
-                      
+
                       {visibleFields?.includes("areaSqYard") && <th className="px-4 py-2">AREA (Sq.Yard)</th>}
                       {visibleFields?.includes("W") && <th className="px-4 py-2">W</th>}
                       {visibleFields?.includes("L") && <th className="px-4 py-2">L</th>}
@@ -465,63 +430,63 @@ const ProjectList = () => {
 
                   </thead>
                   <tbody>
-                  {(() => {
-  const isSearching = inventorySearchTerm.trim() !== "";
+                    {(() => {
+                      const isSearching = inventorySearchTerm.trim() !== "";
 
-  // If user is searching, show all matching inventory
-  // Otherwise, only show first 10
-  const visibleInventory = isSearching
-    ? project.inventory
-    : project.inventory.slice(0, 10);
+                      // If user is searching, show all matching inventory
+                      // Otherwise, only show first 10
+                      const visibleInventory = isSearching
+                        ? project.inventory
+                        : project.inventory.slice(0, 10);
 
-  return visibleInventory.map((item, index) => (
-                      <tr key={item._id}>
-                        {visibleFields?.includes("areaSqYard") && <td className="px-4 py-2">{Number(item.areaSqYard).toFixed(2)}</td>}
-                        {visibleFields?.includes("W") && <td className="px-4 py-2">{item.W}</td>}
-                        {visibleFields?.includes("L") && <td className="px-4 py-2">{item.L}</td>}
-                        {visibleFields?.includes("type") && <td className="px-4 py-2">{item.type}</td>}
-                        {visibleFields?.includes("unitNumber") && <td className="px-4 py-2">{item.unitNumber}</td>}
-                        {visibleFields?.includes("floor") && <td className="px-4 py-2">{item.floor}</td>}
-                        {visibleFields?.includes("carpetArea") && <td className="px-4 py-2">{Number(item.carpetArea).toFixed(2)}</td>}
-                        {visibleFields?.includes("balconyArea") && <td className="px-4 py-2">{Number(item.balconyArea).toFixed(2)}</td>}
-                        {visibleFields?.includes("terraceArea") && <td className="px-4 py-2">{Number(item.terraceArea).toFixed(2)}</td>}
-                        {visibleFields?.includes("stiltArea") && <td className="px-4 py-2">{Number(item.stiltArea).toFixed(2)}</td>}
-                        {visibleFields?.includes("basementArea") && <td className="px-4 py-2">{Number(item.basementArea).toFixed(2)}</td>}
-                        {visibleFields?.includes("mumty") && <td className="px-4 py-2">{Number(item.mumty).toFixed(2)}</td>}
-                        {visibleFields?.includes("commonArea") && <td className="px-4 py-2">{Number(item.commonArea).toFixed(2)}</td>}
-                        {visibleFields?.includes("actualArea") && <td className="px-4 py-2">{Number(item.actualArea).toFixed(2)}</td>}
-                        {visibleFields?.includes("PLC") && <td className="px-4 py-2">{item.PLC}</td>}
-                        {visibleFields?.includes("plcCharges") && <td className="px-4 py-2">
-                          {parseFloat(item.plcCharges) >= 0 && parseFloat(item.plcCharges) <= 1
-                            ? `${parseFloat(item.plcCharges) * 100}%`
-                            : item.plcCharges}
-                        </td>}
-                        <td
-                          className={`px-4 py-2 font-semibold ${item.status === "Sold"
+                      return visibleInventory.map((item, index) => (
+                        <tr key={item._id}>
+                          {visibleFields?.includes("areaSqYard") && <td className="px-4 py-2">{Number(item.areaSqYard).toFixed(2)}</td>}
+                          {visibleFields?.includes("W") && <td className="px-4 py-2">{item.W}</td>}
+                          {visibleFields?.includes("L") && <td className="px-4 py-2">{item.L}</td>}
+                          {visibleFields?.includes("type") && <td className="px-4 py-2">{item.type}</td>}
+                          {visibleFields?.includes("unitNumber") && <td className="px-4 py-2">{item.unitNumber}</td>}
+                          {visibleFields?.includes("floor") && <td className="px-4 py-2">{item.floor}</td>}
+                          {visibleFields?.includes("carpetArea") && <td className="px-4 py-2">{Number(item.carpetArea).toFixed(2)}</td>}
+                          {visibleFields?.includes("balconyArea") && <td className="px-4 py-2">{Number(item.balconyArea).toFixed(2)}</td>}
+                          {visibleFields?.includes("terraceArea") && <td className="px-4 py-2">{Number(item.terraceArea).toFixed(2)}</td>}
+                          {visibleFields?.includes("stiltArea") && <td className="px-4 py-2">{Number(item.stiltArea).toFixed(2)}</td>}
+                          {visibleFields?.includes("basementArea") && <td className="px-4 py-2">{Number(item.basementArea).toFixed(2)}</td>}
+                          {visibleFields?.includes("mumty") && <td className="px-4 py-2">{Number(item.mumty).toFixed(2)}</td>}
+                          {visibleFields?.includes("commonArea") && <td className="px-4 py-2">{Number(item.commonArea).toFixed(2)}</td>}
+                          {visibleFields?.includes("actualArea") && <td className="px-4 py-2">{Number(item.actualArea).toFixed(2)}</td>}
+                          {visibleFields?.includes("PLC") && <td className="px-4 py-2">{item.PLC}</td>}
+                          {visibleFields?.includes("plcCharges") && <td className="px-4 py-2">
+                            {parseFloat(item.plcCharges) >= 0 && parseFloat(item.plcCharges) <= 1
+                              ? `${parseFloat(item.plcCharges) * 100}%`
+                              : item.plcCharges}
+                          </td>}
+                          <td
+                            className={`px-4 py-2 font-semibold ${item.status === "Sold"
                               ? "text-green-600"
                               : item.status === "Unsold"
                                 ? "text-red-600"
                                 : "text-yellow-500"
-                            }`}
-                        >
-                          {item.status}
-                        </td>
-                        <td className="px-4 py-2">
-                          <button
-                            onClick={() => handleSellClick(item)}
-                            className={`px-3 py-1 text-white rounded-lg font-semibold ${item.status === "Hold" || item.status === "Sold"
+                              }`}
+                          >
+                            {item.status}
+                          </td>
+                          <td className="px-4 py-2">
+                            <button
+                              onClick={() => handleSellClick(item)}
+                              className={`px-3 py-1 text-white rounded-lg font-semibold ${item.status === "Hold" || item.status === "Sold"
                                 ? "bg-gray-300 cursor-not-allowed"
                                 : "bg-blue-500 hover:bg-blue-600"
-                              }`}
-                            disabled={item.status === "Hold" || item.status === "Sold"}
-                          >
-                            Sell
-                          </button>
-                        </td>
-                      </tr>
+                                }`}
+                              disabled={item.status === "Hold" || item.status === "Sold"}
+                            >
+                              Sell
+                            </button>
+                          </td>
+                        </tr>
                       ));
                     })()}
-                    
+
                   </tbody>
                 </table>
               </div>
@@ -570,10 +535,10 @@ const ProjectList = () => {
     switch (activeTab) {
       case 'projects':
         return renderProjectsTable();
-      case 'self-info' : 
-        return <EditSelfInfo/> 
-      case "users-activity" :
-        return <ManagerUserActivity/>   
+      case 'self-info':
+        return <EditSelfInfo />
+      case "users-activity":
+        return <ManagerUserActivity />
       case 'logout':
         return <h2 className="text-2xl font-bold">You have logged out.</h2>;
       default:
@@ -625,9 +590,8 @@ const ProjectList = () => {
           {userRole === 'manager' && (
             <li
               onClick={() => setActiveTab('users-activity')}
-              className={`text-gray-600 hover:bg-gray-300 px-2 py-2 rounded cursor-pointer ${
-                activeTab === 'users-activity' ? 'bg-gray-300' : ''
-              }`}
+              className={`text-gray-600 hover:bg-gray-300 px-2 py-2 rounded cursor-pointer ${activeTab === 'users-activity' ? 'bg-gray-300' : ''
+                }`}
             >
               Employees Activity
             </li>

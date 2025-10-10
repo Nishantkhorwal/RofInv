@@ -10,6 +10,10 @@ import MainPage from "./components/MainPage";
 import LinkPage from "./pages/LinkPage";
 import Sukoon from "./pages/Sukoon";
 import SpinWheel from "./components/SpinWheel";
+import WelcomePortal from "./pages/WelcomePortal";
+import WelcomeLetter from "./pages/WelcomeLetter";
+import Pravasa from "./pages/Pravasa";
+import InsigniaSpin from "./components/InsigniaSpin";
 
 function App() {
   return (
@@ -17,7 +21,10 @@ function App() {
       <Routes>
         {/* Public Route */}
         <Route path="/" element={<LoginPage />} />
+        <Route path="/pravasa" element={<Pravasa/>} />
+        <Route path="/welcome-portal" element={<WelcomePortal />} />
         <Route path="/spinwheel" element={<SpinWheel />} />
+        <Route path="/insigniaSpin" element={<InsigniaSpin />} />
 
         {/* Protected Route for Both Admin and Executive */}
         <Route
@@ -64,6 +71,10 @@ function App() {
             </PrivateRoute>
           }
         />
+              <Route
+                  path="/letter"
+                  element={<WelcomeLetter/>}
+                />
 
         <Route path="/inventory/:projectName" element={<InventoryPage />} />
       </Routes>

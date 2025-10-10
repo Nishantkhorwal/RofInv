@@ -180,7 +180,7 @@ const UserActivity = () => {
           <button
             onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
             disabled={currentPage === 1}
-            className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50"
+            className="px-4 py-2 bg-gray-200 rounded hover:bg-white disabled:opacity-50"
           >
             Previous
           </button>
@@ -190,7 +190,7 @@ const UserActivity = () => {
           <button
             onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
             disabled={currentPage === totalPages}
-            className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50"
+            className="px-4 py-2 bg-gray-200 rounded hover:bg-white disabled:opacity-50"
           >
             Next
           </button>
