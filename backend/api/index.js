@@ -14,9 +14,9 @@ import { Server } from 'socket.io';
 import { expireOldSaleRequests } from './controllers/projectController.js';
 import cron from 'node-cron';
 
-// import Inventory from './models/inventoryModel.js';
-// import Project from './models/projectModel.js';
-// import SaleRequest from './models/saleRequestModel.js';
+import Inventory from './models/inventoryModel.js';
+import Project from './models/projectModel.js';
+import SaleRequest from './models/saleRequestModel.js';
 
 // MongoDB Connection
 mongoose
@@ -150,27 +150,27 @@ server.listen(PORT, () => {
 export { io };
 
 
-// const clearCollections = async () => {
-//   try {
-//     await Project.deleteMany({});
-//     console.log('Projects collection cleared.');
+const clearCollections = async () => {
+  try {
+    await Project.deleteMany({});
+    console.log('Projects collection cleared.');
 
-//     await Inventory.deleteMany({});
-//     console.log('Inventories collection cleared.');
+    await Inventory.deleteMany({});
+    console.log('Inventories collection cleared.');
 
-//     await SaleRequest.deleteMany({});
-//     console.log('Requests collection cleared.');
+    await SaleRequest.deleteMany({});
+    console.log('Requests collection cleared.');
 
-//     console.log('All specified collections have been cleared successfully.');
-//     process.exit(0); // Exit the process after clearing the collections
-//   } catch (error) {
-//     console.error('Error clearing collections:', error);
-//     process.exit(1); // Exit the process with an error code
-//   }
-// };
+    console.log('All specified collections have been cleared successfully.');
+    process.exit(0); // Exit the process after clearing the collections
+  } catch (error) {
+    console.error('Error clearing collections:', error);
+    process.exit(1); // Exit the process with an error code
+  }
+};
 
-// // Call the function
-// clearCollections();
+// Call the function
+clearCollections();
 
 // async function updatePLCField() {
 //   try {
